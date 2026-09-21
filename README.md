@@ -20,7 +20,20 @@ and a mouse. RDP is the first; VNC and SSH belong here too.
 | `remote/rdp/codec/interleaved` | Interleaved RLE bitmaps (8–24 bpp). |
 | `remote/rdp/codec/planar` | RDP 6.0 planar bitmaps (32 bpp). |
 
+| **`rdpviewer`** | The app: a remote desktop in a window (`ui/window`) — display, keyboard, mouse, wheel, the remote pointer, sharp text on Retina. |
+
 Authentication and TLS live in `crypto/` (`tls`, `credssp`, `ntlm`, `x509`, …).
+
+## rdpviewer
+
+```bash
+vsc build
+RDP_PASSWORD=… ./.build/vsc/debug/rdpviewer connection.rdp        # or: host[:port] user
+```
+
+Options: `--size WxH` (points), `--cmd-as-win` (Command is the Windows key
+rather than Control), `--no-hidpi`. The password is asked for when
+`RDP_PASSWORD` isn't set.
 
 ## Tests
 
@@ -28,5 +41,7 @@ Authentication and TLS live in `crypto/` (`tls`, `credssp`, `ntlm`, `x509`, …)
 vsc build
 ./.build/vsc/debug/rdp-test          # x224 against spec bytes
 ./.build/vsc/debug/rdp-codec-test    # codecs and fast-path
-./.build/vsc/debug/rdp-screenshot <host[:port]> <user> <password> desktop.png   # live
+./.build/vsc/debug/rdp-screenshot <host[:port]> <user> <password> desktop.png [WxH] [scale%]  # live
+./.build/vsc/debug/rdp-input <host> <user> <password> out.png      # live: drives Notepad
+./.build/vsc/debug/rdp-run <host> <user> <password> "<command>" out.png   # live: Win+R, screenshot
 ```
