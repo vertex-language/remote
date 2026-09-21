@@ -11,7 +11,7 @@ func check(_ ok: bool, _ msg: string) {
 func testEncodeDecode() {
     print("=== x224: encode/decode ===")
     let req = x224.ConnectionRequest(
-        cookie: "marss6414",
+        cookie: "testuser",
         requestedProtocols: x224.SecurityProtocol.SSL | x224.SecurityProtocol.Hybrid | x224.SecurityProtocol.HybridEx)
     let pdu = req.Encode()
     check(pdu[0] == 0x03 && pdu[1] == 0x00, "TPKT header")
