@@ -111,6 +111,9 @@ func parseArgs() -> Options? {
 
 /// Viewer ties one window to one session: a task pumps the session's
 /// events into the framebuffer, and the window's events become input.
+/// It is @MainActor, as window code must be: unannotated async code runs
+/// on the worker pool, and AppKit called from a worker corrupts memory.
+@MainActor
 final class Viewer {
     let win: window.Window
     let cmdAsWin: bool
@@ -480,6 +483,7 @@ func codeName(_ k: window.KeyCode) -> string {
     }
 }
 
+@MainActor
 func main() async -> int32 {
     guard let o = parseArgs() else {
         print("usage: rdpviewer <file.rdp | host[:port]> [user] [--size WxH] [--cmd-as-win] [--no-hidpi]")
