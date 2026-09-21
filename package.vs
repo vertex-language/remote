@@ -15,9 +15,12 @@ let package = Package(
         .library(name: "remote/rdp/fastpath", targets: ["rdp_fastpath"]),
         .library(name: "remote/rdp/codec/interleaved", targets: ["rdp_codec_interleaved"]),
         .library(name: "remote/rdp/codec/planar", targets: ["rdp_codec_planar"]),
+        .executable(name: "rdpviewer", targets: ["rdpviewer"]),
         .executable(name: "rdp-test", targets: ["rdp_test"]),
         .executable(name: "rdp-codec-test", targets: ["rdp_codec_test"]),
         .executable(name: "rdp-screenshot", targets: ["rdp_screenshot"]),
+        .executable(name: "rdp-input", targets: ["rdp_input"]),
+        .executable(name: "rdp-run", targets: ["rdp_run"]),
     ],
     targets: [
         // RDP transport framing: TPKT, X.224, security negotiation, and the
@@ -59,6 +62,12 @@ let package = Package(
             path: "rdp",
             exclude: ["x224", "wire", "gfx", "fastpath", "codec"]
         ),
+        // A remote desktop in a window: remote/rdp over ui/window.
+        .executableTarget(
+            name: "rdpviewer",
+            dependencies: ["rdp"],
+            path: "rdpviewer"
+        ),
         // x224 PDUs checked against bytes from the spec.
         .executableTarget(
             name: "rdp_test",
@@ -76,6 +85,18 @@ let package = Package(
             name: "rdp_screenshot",
             dependencies: ["rdp", "rdp_gfx"],
             path: "tests/rdp_screenshot"
+        ),
+        // Live: keyboard and mouse input from one task while another pumps.
+        .executableTarget(
+            name: "rdp_input",
+            dependencies: ["rdp"],
+            path: "tests/rdp_input"
+        ),
+        // Live: run a command through Win+R and screenshot it.
+        .executableTarget(
+            name: "rdp_run",
+            dependencies: ["rdp"],
+            path: "tests/rdp_run"
         ),
     ]
 )

@@ -66,11 +66,13 @@ func buildClientCoreData(_ d: ClientData) -> [uint8] {
     w.U16LE(1)                          // clientProductId
     w.U32LE(0)                          // serialNumber
     w.U16LE(24)                         // highColorDepth (24bpp)
-    w.U16LE(0x0007)                     // supportedColorDepths (24/16/15)
-    w.U16LE(0x0001 | 0x0002)            // earlyCapabilityFlags: ERRINFO + WANT_32BPP
+    w.U16LE(0x000F)                     // supportedColorDepths (24/16/15/32)
+    // earlyCapabilityFlags: SUPPORT_ERRINFO_PDU, WANT_32BPP_SESSION,
+    // VALID_CONNECTION_TYPE (connectionType below is LAN).
+    w.U16LE(0x0001 | 0x0002 | 0x0020)
     var k = 0
     while k < 64 { w.U8(0); k += 1 }    // clientDigProductId
-    w.U8(0)                             // connectionType
+    w.U8(6)                             // connectionType: CONNECTION_TYPE_LAN
     w.U8(0)                             // pad1octet
     w.U32LE(d.SelectedProtocol)         // serverSelectedProtocol (echo the nego result)
     return block(csCore, w.Bytes)

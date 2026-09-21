@@ -44,9 +44,10 @@ public struct Cursor {
     }
 }
 
-/// Session is a connected RDP session. Call NextEvent in a loop; the
-/// Framebuffer holds the desktop as of the last .frame event.
-public struct Session {
+/// Session is a connected RDP session. Call NextEvent in a loop on one
+/// task; the Framebuffer holds the desktop as of the last .frame event,
+/// and Input sends keys and pointer events from any task.
+public final class Session {
     var transport: Transport
     public var Info: ConnectionInfo
     public var Framebuffer: gfx.Framebuffer
@@ -57,7 +58,6 @@ public struct Session {
     var config: Config
     /// Trace prints each PDU as it is handled.
     public var Trace: bool = false
-    var debugRects: int = 0
 
     init(transport: Transport, info: ConnectionInfo, config: Config) {
         self.transport = transport
@@ -68,8 +68,11 @@ public struct Session {
         self.palette = [uint8](repeating: 0, count: 256 * 3)
     }
 
+    /// Input sends keyboard and mouse events to the server.
+    public var Input: Input { return inputFor(transport.Out) }
+
     /// NextEvent waits for the next event; nil once the session has ended.
-    public mutating func NextEvent() async throws -> Event? {
+    public func NextEvent() async throws -> Event? {
         while true {
             if pending.count > 0 {
                 let e = pending[0]
@@ -93,14 +96,15 @@ public struct Session {
         }
     }
 
-    /// Close ends the session.
-    public mutating func Close() {
+    /// Close ends the session and shuts the connection.
+    public func Close() {
         closed = true
+        transport.Out.Close()
     }
 
     // --- fast-path ---
 
-    mutating func handleFastPath(_ bytes: [uint8]) throws {
+    func handleFastPath(_ bytes: [uint8]) throws {
         let updates = try reassembler.Feed(bytes)
         var damage = gfx.Rect(x: 0, y: 0, width: 0, height: 0)
         for u in updates {
@@ -140,7 +144,7 @@ public struct Session {
         }
     }
 
-    mutating func pushPointer(_ img: fastpath.PointerImage) {
+    func pushPointer(_ img: fastpath.PointerImage) {
         let cursor = decodePointer(img)
         let e: Event = .pointer(cursor)
         pending.append(e)
@@ -148,7 +152,7 @@ public struct Session {
 
     // applyBitmap decodes one bitmap rectangle into the framebuffer and
     // returns the damaged area.
-    mutating func applyBitmap(_ b: fastpath.BitmapData) -> gfx.Rect {
+    func applyBitmap(_ b: fastpath.BitmapData) -> gfx.Rect {
         let dst = gfx.Rect(x: b.Left, y: b.Top, width: b.Right - b.Left + 1, height: b.Bottom - b.Top + 1)
         if b.Compressed {
             if b.BitsPerPixel == 32 {
@@ -162,15 +166,6 @@ public struct Session {
             }
             do {
                 let raw = try interleaved.Decode(b.Data, width: b.Width, height: b.Height, bpp: b.BitsPerPixel)
-                if Trace && debugRects < 6 {
-                    debugRects += 1
-                    var nz = 0
-                    for v in raw { if v != 0 { nz += 1 } }
-                    print("  rect \(b.Width)x\(b.Height)@\(b.Left),\(b.Top) bpp=\(b.BitsPerPixel) flags=\(b.Flags) in=\(b.Data.count) out=\(raw.count) nonzero=\(nz) head=\(raw[0]),\(raw[1]),\(raw[2]),\(raw[3])")
-                    var hex = ""
-                    for v in b.Data { hex += "\(v) " }
-                    print("    data: \(hex)")
-                }
                 return blitRaw(raw, b, dst)
             } catch {
                 if Trace { print("  interleaved decode failed: \(error)") }
@@ -194,7 +189,7 @@ public struct Session {
         return blitRaw(packed, b, dst)
     }
 
-    mutating func blitRaw(_ raw: [uint8], _ b: fastpath.BitmapData, _ dst: gfx.Rect) -> gfx.Rect {
+    func blitRaw(_ raw: [uint8], _ b: fastpath.BitmapData, _ dst: gfx.Rect) -> gfx.Rect {
         switch b.BitsPerPixel {
         case 8: return Framebuffer.BlitPalette8(raw, srcWidth: b.Width, palette: palette, into: dst, bottomUp: true)
         case 15: return Framebuffer.Blit15(raw, srcWidth: b.Width, into: dst, bottomUp: true)
@@ -209,7 +204,7 @@ public struct Session {
 
     // --- slow-path ---
 
-    mutating func handleSlowPath(_ bytes: [uint8]) async throws {
+    func handleSlowPath(_ bytes: [uint8]) async throws {
         let payload = try x224.UnwrapData(bytes)
         // Anything that isn't an MCS Send Data Indication (e.g. a Disconnect
         // Provider Ultimatum) ends the session.
@@ -250,7 +245,7 @@ public struct Session {
         }
     }
 
-    mutating func handleDataPDU(_ pduType2: uint8, _ r: inout binary.Reader) throws {
+    func handleDataPDU(_ pduType2: uint8, _ r: inout binary.Reader) throws {
         switch pduType2 {
         case pduType2ErrorInfo:
             let code = try r.U32LE()
@@ -280,7 +275,7 @@ public struct Session {
 
     // reactivate runs the capability exchange and finalization again after a
     // Deactivate All, then resizes the framebuffer to the new desktop.
-    mutating func reactivate(demandActive: [uint8] = []) async throws {
+    func reactivate(demandActive: [uint8] = []) async throws {
         var da: [uint8] = demandActive
         if da.count == 0 {
             var attempts = 0

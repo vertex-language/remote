@@ -106,6 +106,9 @@ public struct DemandActive {
     public var DesktopWidth: uint16 = 0
     public var DesktopHeight: uint16 = 0
     public var ServerFastPathInput: bool = false
+    /// The color depth the server settled on (its Bitmap set's
+    /// preferredBitsPerPixel).
+    public var BitsPerPixel: uint16 = 0
     public init() {}
 }
 
@@ -140,7 +143,7 @@ func parseDemandActive(_ payload: [uint8]) throws -> DemandActive {
         if length < 4 || length - 4 > r.Remaining { break }
         var body = try r.Sub(length - 4)
         if type == capBitmap && body.Remaining >= 12 {
-            let _ = try body.U16LE()   // preferredBitsPerPixel
+            da.BitsPerPixel = try body.U16LE()
             let _ = try body.U16LE(); let _ = try body.U16LE(); let _ = try body.U16LE()
             da.DesktopWidth = try body.U16LE()
             da.DesktopHeight = try body.U16LE()

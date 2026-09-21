@@ -150,7 +150,7 @@ func finishConnection(_ t: inout Transport, _ info: inout ConnectionInfo, _ conf
         info.Width = da.DesktopWidth
         info.Height = da.DesktopHeight
     }
-    if trace { print("  Demand Active, shareId \(da.ShareId), desktop \(info.Width)x\(info.Height)") }
+    if trace { print("  Demand Active, shareId \(da.ShareId), desktop \(info.Width)x\(info.Height) at \(da.BitsPerPixel) bpp") }
 
     try await activate(&t, &info, config, trace: trace)
 }

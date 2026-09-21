@@ -75,148 +75,49 @@ public struct Framebuffer {
     /// Blit16 writes 16bpp RGB565 rows (2 bytes per pixel, little-endian,
     /// srcWidth pixels per row) into dst. Rows are bottom-up when bottomUp.
     public mutating func Blit16(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
-        let target = dst.Intersect(Bounds)
-        if target.IsEmpty { return target }
-        let rowBytes = srcWidth * 2
-        let srcRows = src.count / rowBytes
-        var row = 0
-        while row < target.Height {
-            let srcRow = sourceRow(row + (target.Y - dst.Y), height: dst.Height, bottomUp: bottomUp)
-            if srcRow >= srcRows { break }
-            var s = srcRow * rowBytes + (target.X - dst.X) * 2
-            var d = ((target.Y + row) * Width + target.X) * 4
-            var n = target.Width
-            while n > 0 {
-                let v = uint32(src[s]) | (uint32(src[s + 1]) << 8)
-                let r = (v >> 11) & 0x1f
-                let g = (v >> 5) & 0x3f
-                let b = v & 0x1f
-                Pixels[d] = uint8(truncatingIfNeeded: (r << 3) | (r >> 2))
-                Pixels[d + 1] = uint8(truncatingIfNeeded: (g << 2) | (g >> 4))
-                Pixels[d + 2] = uint8(truncatingIfNeeded: (b << 3) | (b >> 2))
-                Pixels[d + 3] = 255
-                s += 2; d += 4; n -= 1
-            }
-            row += 1
-        }
-        return target
+        return blit(src, srcWidth: srcWidth, bytesPerPixel: 2, format: formatRGB565, palette: [], into: dst, bottomUp: bottomUp)
     }
 
     /// Blit15 writes 15bpp RGB555 rows.
     public mutating func Blit15(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
-        let target = dst.Intersect(Bounds)
-        if target.IsEmpty { return target }
-        let rowBytes = srcWidth * 2
-        let srcRows = src.count / rowBytes
-        var row = 0
-        while row < target.Height {
-            let srcRow = sourceRow(row + (target.Y - dst.Y), height: dst.Height, bottomUp: bottomUp)
-            if srcRow >= srcRows { break }
-            var s = srcRow * rowBytes + (target.X - dst.X) * 2
-            var d = ((target.Y + row) * Width + target.X) * 4
-            var n = target.Width
-            while n > 0 {
-                let v = uint32(src[s]) | (uint32(src[s + 1]) << 8)
-                let r = (v >> 10) & 0x1f
-                let g = (v >> 5) & 0x1f
-                let b = v & 0x1f
-                Pixels[d] = uint8(truncatingIfNeeded: (r << 3) | (r >> 2))
-                Pixels[d + 1] = uint8(truncatingIfNeeded: (g << 3) | (g >> 2))
-                Pixels[d + 2] = uint8(truncatingIfNeeded: (b << 3) | (b >> 2))
-                Pixels[d + 3] = 255
-                s += 2; d += 4; n -= 1
-            }
-            row += 1
-        }
-        return target
+        return blit(src, srcWidth: srcWidth, bytesPerPixel: 2, format: formatRGB555, palette: [], into: dst, bottomUp: bottomUp)
     }
 
     /// BlitBGR24 writes 24bpp rows whose bytes are blue, green, red (the
     /// order Windows uses for uncompressed and interleaved bitmaps).
     public mutating func BlitBGR24(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
-        return blit24(src, srcWidth: srcWidth, into: dst, bottomUp: bottomUp, redFirst: false)
+        return blit(src, srcWidth: srcWidth, bytesPerPixel: 3, format: formatBGR24, palette: [], into: dst, bottomUp: bottomUp)
     }
 
     /// BlitRGB24 writes 24bpp rows whose bytes are red, green, blue (what
     /// the planar codec produces).
     public mutating func BlitRGB24(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
-        return blit24(src, srcWidth: srcWidth, into: dst, bottomUp: bottomUp, redFirst: true)
-    }
-
-    mutating func blit24(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool, redFirst: bool) -> Rect {
-        let target = dst.Intersect(Bounds)
-        if target.IsEmpty { return target }
-        let rowBytes = srcWidth * 3
-        let srcRows = src.count / rowBytes
-        var row = 0
-        while row < target.Height {
-            let srcRow = sourceRow(row + (target.Y - dst.Y), height: dst.Height, bottomUp: bottomUp)
-            if srcRow >= srcRows { break }
-            var s = srcRow * rowBytes + (target.X - dst.X) * 3
-            var d = ((target.Y + row) * Width + target.X) * 4
-            var n = target.Width
-            if redFirst {
-                while n > 0 {
-                    Pixels[d] = src[s]; Pixels[d + 1] = src[s + 1]; Pixels[d + 2] = src[s + 2]; Pixels[d + 3] = 255
-                    s += 3; d += 4; n -= 1
-                }
-            } else {
-                while n > 0 {
-                    Pixels[d] = src[s + 2]; Pixels[d + 1] = src[s + 1]; Pixels[d + 2] = src[s]; Pixels[d + 3] = 255
-                    s += 3; d += 4; n -= 1
-                }
-            }
-            row += 1
-        }
-        return target
+        return blit(src, srcWidth: srcWidth, bytesPerPixel: 3, format: formatRGB24, palette: [], into: dst, bottomUp: bottomUp)
     }
 
     /// BlitBGRX32 writes 32bpp rows whose bytes are blue, green, red, pad
     /// (uncompressed 32bpp bitmap data).
     public mutating func BlitBGRX32(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
-        let target = dst.Intersect(Bounds)
-        if target.IsEmpty { return target }
-        let rowBytes = srcWidth * 4
-        let srcRows = src.count / rowBytes
-        var row = 0
-        while row < target.Height {
-            let srcRow = sourceRow(row + (target.Y - dst.Y), height: dst.Height, bottomUp: bottomUp)
-            if srcRow >= srcRows { break }
-            var s = srcRow * rowBytes + (target.X - dst.X) * 4
-            var d = ((target.Y + row) * Width + target.X) * 4
-            var n = target.Width
-            while n > 0 {
-                Pixels[d] = src[s + 2]; Pixels[d + 1] = src[s + 1]; Pixels[d + 2] = src[s]; Pixels[d + 3] = 255
-                s += 4; d += 4; n -= 1
-            }
-            row += 1
-        }
-        return target
+        return blit(src, srcWidth: srcWidth, bytesPerPixel: 4, format: formatBGRX32, palette: [], into: dst, bottomUp: bottomUp)
     }
 
     /// BlitPalette8 writes 8bpp indexed rows through a 256-entry RGB palette
     /// (3 bytes per entry, red first).
     public mutating func BlitPalette8(_ src: [uint8], srcWidth: int, palette: [uint8], into dst: Rect, bottomUp: bool) -> Rect {
+        var pal = palette
+        while pal.count < 768 { pal.append(0) }
+        return blit(src, srcWidth: srcWidth, bytesPerPixel: 1, format: formatPalette8, palette: pal, into: dst, bottomUp: bottomUp)
+    }
+
+    // blit converts the rows of src that land inside the framebuffer.
+    mutating func blit(_ src: [uint8], srcWidth: int, bytesPerPixel: int, format: int, palette: [uint8],
+                       into dst: Rect, bottomUp: bool) -> Rect {
         let target = dst.Intersect(Bounds)
-        if target.IsEmpty { return target }
-        let srcRows = src.count / srcWidth
-        var row = 0
-        while row < target.Height {
-            let srcRow = sourceRow(row + (target.Y - dst.Y), height: dst.Height, bottomUp: bottomUp)
-            if srcRow >= srcRows { break }
-            var s = srcRow * srcWidth + (target.X - dst.X)
-            var d = ((target.Y + row) * Width + target.X) * 4
-            var n = target.Width
-            while n > 0 {
-                let p = int(src[s]) * 3
-                if p + 2 < palette.count {
-                    Pixels[d] = palette[p]; Pixels[d + 1] = palette[p + 1]; Pixels[d + 2] = palette[p + 2]
-                }
-                Pixels[d + 3] = 255
-                s += 1; d += 4; n -= 1
-            }
-            row += 1
-        }
+        if target.IsEmpty || srcWidth <= 0 { return target }
+        let rowBytes = srcWidth * bytesPerPixel
+        let srcRows = src.count / rowBytes
+        let width = Width
+        convertRows(&Pixels, src, palette, target, dst, width, rowBytes, srcRows, bytesPerPixel, format, bottomUp)
         return target
     }
 
@@ -235,6 +136,89 @@ public struct Framebuffer {
             row += 1
         }
         return target
+    }
+}
+
+let formatRGB565 = 0
+let formatRGB555 = 1
+let formatBGR24 = 2
+let formatRGB24 = 3
+let formatBGRX32 = 4
+let formatPalette8 = 5
+
+// convertRows writes the part of an update inside target into the pixels,
+// converting each source pixel to opaque RGBA. It runs on raw pointers:
+// this is every pixel of every bitmap update.
+func convertRows(_ pixels: inout [uint8], _ src: [uint8], _ palette: [uint8], _ target: Rect, _ dst: Rect,
+                 _ width: int, _ rowBytes: int, _ srcRows: int, _ bpp: int, _ format: int, _ bottomUp: bool) {
+    pixels.withUnsafeMutableBufferPointer { pb in
+        src.withUnsafeBufferPointer { sb in
+            palette.withUnsafeBufferPointer { palb in
+                let out = pb.baseAddress!
+                let inp = sb.baseAddress!
+                let pal = palb.baseAddress
+                var row = 0
+                while row < target.Height {
+                    let srcRow = sourceRow(row + (target.Y - dst.Y), height: dst.Height, bottomUp: bottomUp)
+                    if srcRow >= srcRows { break }
+                    var s = inp + (srcRow * rowBytes + (target.X - dst.X) * bpp)
+                    var d = out + ((target.Y + row) * width + target.X) * 4
+                    var n = target.Width
+                    switch format {
+                    case formatRGB565:
+                        while n > 0 {
+                            let v = uint32(s.pointee) | (uint32((s + 1).pointee) << 8)
+                            let r = (v >> 11) & 0x1f
+                            let g = (v >> 5) & 0x3f
+                            let b = v & 0x1f
+                            d.pointee = uint8(truncatingIfNeeded: (r << 3) | (r >> 2))
+                            (d + 1).pointee = uint8(truncatingIfNeeded: (g << 2) | (g >> 4))
+                            (d + 2).pointee = uint8(truncatingIfNeeded: (b << 3) | (b >> 2))
+                            (d + 3).pointee = 255
+                            s = s + 2; d = d + 4; n -= 1
+                        }
+                    case formatRGB555:
+                        while n > 0 {
+                            let v = uint32(s.pointee) | (uint32((s + 1).pointee) << 8)
+                            let r = (v >> 10) & 0x1f
+                            let g = (v >> 5) & 0x1f
+                            let b = v & 0x1f
+                            d.pointee = uint8(truncatingIfNeeded: (r << 3) | (r >> 2))
+                            (d + 1).pointee = uint8(truncatingIfNeeded: (g << 3) | (g >> 2))
+                            (d + 2).pointee = uint8(truncatingIfNeeded: (b << 3) | (b >> 2))
+                            (d + 3).pointee = 255
+                            s = s + 2; d = d + 4; n -= 1
+                        }
+                    case formatBGR24:
+                        while n > 0 {
+                            d.pointee = (s + 2).pointee; (d + 1).pointee = (s + 1).pointee
+                            (d + 2).pointee = s.pointee; (d + 3).pointee = 255
+                            s = s + 3; d = d + 4; n -= 1
+                        }
+                    case formatRGB24:
+                        while n > 0 {
+                            d.pointee = s.pointee; (d + 1).pointee = (s + 1).pointee
+                            (d + 2).pointee = (s + 2).pointee; (d + 3).pointee = 255
+                            s = s + 3; d = d + 4; n -= 1
+                        }
+                    case formatBGRX32:
+                        while n > 0 {
+                            d.pointee = (s + 2).pointee; (d + 1).pointee = (s + 1).pointee
+                            (d + 2).pointee = s.pointee; (d + 3).pointee = 255
+                            s = s + 4; d = d + 4; n -= 1
+                        }
+                    default:
+                        while n > 0 {
+                            let p = int(s.pointee) * 3
+                            d.pointee = (pal! + p).pointee; (d + 1).pointee = (pal! + p + 1).pointee
+                            (d + 2).pointee = (pal! + p + 2).pointee; (d + 3).pointee = 255
+                            s = s + 1; d = d + 4; n -= 1
+                        }
+                    }
+                    row += 1
+                }
+            }
+        }
     }
 }
 
