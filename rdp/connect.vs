@@ -14,6 +14,9 @@ public struct Config {
     public var Height: uint16
     public var KeyboardLayout: uint32
     public var ClientName: string
+    /// Percent the server should scale its UI by: 100, or 200 for a
+    /// desktop sized in a Retina display's pixels. 100...500.
+    public var DesktopScale: uint32 = 100
 
     public init(username: string, password: [uint8], domain: string = "",
                 width: uint16 = 1024, height: uint16 = 768,
@@ -87,8 +90,15 @@ func connectTransport(_ address: string, config: Config, trace: bool) async thro
     var t = Transport(conn: tlsConn)
 
     // 4. Basic settings exchange: MCS Connect Initial -> Connect Response.
-    let clientData = ClientData(width: config.Width, height: config.Height, clientName: config.ClientName,
+    var clientData = ClientData(width: config.Width, height: config.Height, clientName: config.ClientName,
                                 keyboardLayout: config.KeyboardLayout, selectedProtocol: cc.SelectedProtocol)
+    var scale = config.DesktopScale
+    if scale < 100 { scale = 100 }
+    if scale > 500 { scale = 500 }
+    clientData.DesktopScale = scale
+    // Device scale is one of three steps; the nearest keeps Windows' own
+    // rounding happy.
+    clientData.DeviceScale = scale >= 160 ? 180 : (scale >= 120 ? 140 : 100)
     try await t.SendX224(buildConnectInitial(clientData))
     let connResp = try await t.NextX224Payload()
     let channels = try parseConnectResponse(connResp)

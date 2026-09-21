@@ -15,10 +15,8 @@ import "remote/rdp/codec/planar"
 public enum Event {
     /// Pixels changed inside damage; read them with the Framebuffer.
     case frame(gfx.Rect)
-    /// A new pointer shape (already stored in the cache at its index).
-    case pointer(Cursor)
-    /// Show the pointer shape cached at this index.
-    case pointerCached(int)
+    /// The pointer's shape changed (a new shape, or one from the cache).
+    case pointer(PointerShape)
     case pointerHidden
     case pointerDefault
     case pointerPosition(int, int)
@@ -32,8 +30,8 @@ public enum Event {
     case disconnected(string)
 }
 
-/// Cursor is a decoded pointer: premultiplied RGBA, top row first.
-public struct Cursor {
+/// PointerShape is a decoded pointer: premultiplied RGBA, top row first.
+public struct PointerShape {
     public var Width: int
     public var Height: int
     public var HotX: int
@@ -53,6 +51,9 @@ public final class Session {
     public var Framebuffer: gfx.Framebuffer
     var reassembler: fastpath.Reassembler
     var palette: [uint8]
+    // Pointer shapes by the server's cache index (Pointer capability:
+    // 25 entries at most); a Width of 0 is an empty slot.
+    var pointerCache: [PointerShape] = []
     var pending: [Event] = []
     var closed: bool = false
     var config: Config
@@ -125,7 +126,10 @@ public final class Session {
                 let (x, y) = try fastpath.ParsePointerPosition(u.Data)
                 pending.append(.pointerPosition(x, y))
             case fastpath.UpdateCode.PointerCached:
-                pending.append(.pointerCached(try fastpath.ParseCachedPointer(u.Data)))
+                let index = try fastpath.ParseCachedPointer(u.Data)
+                if index >= 0 && index < pointerCache.count && pointerCache[index].Width > 0 {
+                    pending.append(.pointer(pointerCache[index]))
+                }
             case fastpath.UpdateCode.PointerColor:
                 let img = try fastpath.ParseColorPointer(u.Data)
                 pushPointer(img)
@@ -146,6 +150,12 @@ public final class Session {
 
     func pushPointer(_ img: fastpath.PointerImage) {
         let cursor = decodePointer(img)
+        if img.CacheIndex >= 0 && img.CacheIndex < 64 {
+            while pointerCache.count <= img.CacheIndex {
+                pointerCache.append(PointerShape(width: 0, height: 0, hotX: 0, hotY: 0, pixels: []))
+            }
+            pointerCache[img.CacheIndex] = cursor
+        }
         let e: Event = .pointer(cursor)
         pending.append(e)
     }
@@ -302,11 +312,11 @@ public final class Session {
 
     // decodePointer converts a wire pointer (XOR colour mask + AND
     // transparency mask, bottom-up, rows padded to 2 bytes) into RGBA.
-    func decodePointer(_ p: fastpath.PointerImage) -> Cursor {
+    func decodePointer(_ p: fastpath.PointerImage) -> PointerShape {
         let w = p.Width
         let h = p.Height
         var px = [uint8](repeating: 0, count: w * h * 4)
-        if w <= 0 || h <= 0 { return Cursor(width: 0, height: 0, hotX: 0, hotY: 0, pixels: px) }
+        if w <= 0 || h <= 0 { return PointerShape(width: 0, height: 0, hotX: 0, hotY: 0, pixels: px) }
         let xorRow = ((w * p.XorBpp + 7) / 8 + 1) & ~1
         let andRow = ((w + 7) / 8 + 1) & ~1
         var y = 0
@@ -368,7 +378,7 @@ public final class Session {
             }
             y += 1
         }
-        return Cursor(width: w, height: h, hotX: p.HotX, hotY: p.HotY, pixels: px)
+        return PointerShape(width: w, height: h, hotX: p.HotX, hotY: p.HotY, pixels: px)
     }
 }
 

@@ -30,6 +30,10 @@ public struct ClientData {
     public var KeyboardLayout: uint32
     public var SelectedProtocol: uint32
     public var Channels: [string]
+    /// Percent the server scales its UI by (100...500), and the device
+    /// scale (100, 140 or 180).
+    public var DesktopScale: uint32 = 100
+    public var DeviceScale: uint32 = 100
 
     public init(width: uint16, height: uint16, clientName: string,
                 keyboardLayout: uint32, selectedProtocol: uint32, channels: [string] = []) {
@@ -75,6 +79,14 @@ func buildClientCoreData(_ d: ClientData) -> [uint8] {
     w.U8(6)                             // connectionType: CONNECTION_TYPE_LAN
     w.U8(0)                             // pad1octet
     w.U32LE(d.SelectedProtocol)         // serverSelectedProtocol (echo the nego result)
+    // The display's physical size (mm; 0 = unknown), orientation, and the
+    // scale factors ([MS-RDPBCGR] 2.2.1.3.2): Windows 8.1 and later scale
+    // their UI by desktopScaleFactor, so a HiDPI client gets sharp text.
+    w.U32LE(0)                          // desktopPhysicalWidth
+    w.U32LE(0)                          // desktopPhysicalHeight
+    w.U16LE(0)                          // desktopOrientation: landscape
+    w.U32LE(d.DesktopScale)
+    w.U32LE(d.DeviceScale)
     return block(csCore, w.Bytes)
 }
 

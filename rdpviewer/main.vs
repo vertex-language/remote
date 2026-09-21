@@ -1,7 +1,10 @@
 // rdpviewer: a remote desktop in a window. Connects to a Windows host
 // with remote/rdp, shows its desktop, and sends it the keyboard and mouse.
 //
-//     rdpviewer <file.rdp | host[:port]> [user] [--size WxH] [--cmd-as-win]
+//     rdpviewer <file.rdp | host[:port]> [user] [--size WxH] [--cmd-as-win] [--no-hidpi]
+//
+// --size is in points; on a Retina display the desktop is twice that in
+// pixels with Windows' UI at 200%, unless --no-hidpi.
 //
 // The password comes from $RDP_PASSWORD, or is asked for on the terminal.
 // Command is sent as Control (so Cmd-C copies) unless --cmd-as-win makes
@@ -46,6 +49,7 @@ struct Options {
     var width: int = 1280
     var height: int = 800
     var cmdAsWin: bool = false
+    var noScale: bool = false
 }
 
 func parseSize(_ s: string, _ o: inout Options) -> bool {
@@ -72,6 +76,8 @@ func parseArgs() -> Options? {
         let a = args[i]
         if a == "--cmd-as-win" {
             o.cmdAsWin = true
+        } else if a == "--no-hidpi" {
+            o.noScale = true
         } else if a == "--size" && i + 1 < args.count {
             if !parseSize(args[i + 1], &o) { return nil }
             i += 1
@@ -107,9 +113,15 @@ func parseArgs() -> Options? {
 /// events into the framebuffer, and the window's events become input.
 final class Viewer {
     let win: window.Window
-    let session: rdp.Session
-    let input: rdp.Input
     let cmdAsWin: bool
+    let address: string
+    var config: rdp.Config
+    // Set once connected; nil while connecting.
+    var session: rdp.Session? = nil
+    var input: rdp.Input? = nil
+    // Device pixels per point: the desktop is this many times the
+    // window's size in points, and Windows scales its UI to match.
+    let scale: float32
 
     var dirty: bool = true
     var frameRequested: bool = false
@@ -129,10 +141,11 @@ final class Viewer {
     var wheelY: float32 = 0
     var wheelX: float32 = 0
 
-    init(win: window.Window, session: rdp.Session, cmdAsWin: bool) {
+    init(win: window.Window, address: string, config: rdp.Config, scale: float32, cmdAsWin: bool) {
         self.win = win
-        self.session = session
-        self.input = session.Input
+        self.address = address
+        self.config = config
+        self.scale = scale
         self.cmdAsWin = cmdAsWin
     }
 
@@ -142,12 +155,28 @@ final class Viewer {
         win.RequestFrame()
     }
 
-    /// pump runs on its own task until the session ends.
+    /// pump connects, then runs on its own task until the session ends.
     func pump() async {
+        let s: rdp.Session
+        do {
+            s = try await rdp.Connect(address, config: config)
+        } catch let e as rdp.RdpError {
+            ended = e.Message
+            requestFrame()
+            return
+        } catch {
+            ended = "\(error)"
+            requestFrame()
+            return
+        }
+        session = s
+        input = s.Input
+        print("rdpviewer: connected, desktop \(s.Framebuffer.Width)x\(s.Framebuffer.Height)")
+        win.SetTitle("\(address) — Remote Desktop")
         while true {
             var event: rdp.Event?
             do {
-                event = try await session.NextEvent()
+                event = try await s.NextEvent()
             } catch {
                 ended = "\(error)"
                 requestFrame()
@@ -168,6 +197,15 @@ final class Viewer {
                 requestFrame()
             case .logonComplete:
                 print("rdpviewer: logged on")
+            case .pointer(let c):
+                if c.Width > 0 && c.Height > 0 {
+                    try? win.SetCursorImage(c.Pixels, width: int32(c.Width), height: int32(c.Height),
+                                            hotX: int32(c.HotX), hotY: int32(c.HotY), scale: scale)
+                }
+            case .pointerHidden:
+                win.SetCursor(.hidden)
+            case .pointerDefault:
+                win.SetCursor(.arrow)
             case .disconnected(let reason):
                 ended = reason
                 requestFrame()
@@ -179,7 +217,8 @@ final class Viewer {
     }
 
     func present() {
-        let fb = session.Framebuffer
+        guard let s = session else { return }
+        let fb = s.Framebuffer
         if fb.Width <= 0 || fb.Height <= 0 { return }
         do {
             try win.Surface().Present(fb.Pixels, size: window.PixelSize(int32(fb.Width), int32(fb.Height)))
@@ -192,7 +231,8 @@ final class Viewer {
     // stretched over the whole content area.
     func desktop(_ p: window.Point) -> (int, int) {
         let size = win.Size()
-        let fb = session.Framebuffer
+        guard let s = session else { return (0, 0) }
+        let fb = s.Framebuffer
         if size.Width <= 0 || size.Height <= 0 { return (0, 0) }
         var x = int(p.X * float32(fb.Width) / size.Width)
         var y = int(p.Y * float32(fb.Height) / size.Height)
@@ -205,6 +245,18 @@ final class Viewer {
 
     /// handle takes one window event; false once the viewer should close.
     func handle(_ e: window.Event) async -> bool {
+        if case .closeRequested = e { return false }
+        guard let input = input else {
+            // Connecting: only frames matter, to report a failure.
+            if case .frame(_) = e {
+                frameRequested = false
+                if !ended.isEmpty {
+                    print("rdpviewer: \(ended)")
+                    return false
+                }
+            }
+            return true
+        }
         switch e {
         case .closeRequested:
             return false
@@ -282,6 +334,7 @@ final class Viewer {
 
     // modifiers brings the server's modifier keys in line with the Mac's.
     func modifiers(_ m: window.Modifiers) async {
+        guard let input = input else { return }
         let wantShift = m.Shift
         let wantControl = m.Control || (m.Meta && !cmdAsWin)
         let wantAlt = m.Alt
@@ -311,6 +364,7 @@ final class Viewer {
     // releaseAll lets go of everything, so keys held when the window lost
     // focus (Cmd-Tab) don't stay stuck down on the server.
     func releaseAll() async {
+        guard let input = input else { return }
         for k in pressed {
             if let sc = scancode(k) { try? await input.Key(sc, down: false) }
         }
@@ -428,46 +482,35 @@ func codeName(_ k: window.KeyCode) -> string {
 
 func main() async -> int32 {
     guard let o = parseArgs() else {
-        print("usage: rdpviewer <file.rdp | host[:port]> [user] [--size WxH] [--cmd-as-win]")
+        print("usage: rdpviewer <file.rdp | host[:port]> [user] [--size WxH] [--cmd-as-win] [--no-hidpi]")
         print("       the password comes from $RDP_PASSWORD, or is asked for")
         return 2
     }
     let password = readPassword("Password for \(o.user)@\(o.address): ")
-    var config = rdp.Config(username: o.user, password: password, domain: o.domain,
-                            width: uint16(o.width), height: uint16(o.height))
-    config.ClientName = "vertex"
-
-    print("rdpviewer: connecting to \(o.address) as \(o.user)…")
-    let session: rdp.Session
-    do {
-        session = try await rdp.Connect(o.address, config: config)
-    } catch let e as rdp.RdpError {
-        print("rdpviewer: \(e.Message)")
-        return 1
-    } catch {
-        print("rdpviewer: \(error)")
-        return 1
-    }
-    let fb = session.Framebuffer
-    print("rdpviewer: connected, desktop \(fb.Width)x\(fb.Height)")
 
     var options = window.Options()
     options.Resizable = false
     let win: window.Window
     do {
-        win = try window.Create(title: "\(o.address) — Remote Desktop",
-                                size: window.Size(float32(fb.Width), float32(fb.Height)), options: options)
+        win = try window.Create(title: "\(o.address) — connecting…",
+                                size: window.Size(float32(o.width), float32(o.height)), options: options)
     } catch {
         print("rdpviewer: cannot create a window: \(error)")
-        session.Close()
         return 1
     }
+    // A Retina window gets a desktop in its device pixels, with Windows
+    // scaling its UI to match, so text is sharp rather than stretched.
+    var scale = win.ScaleFactor()
+    if o.noScale || scale < 1 { scale = 1 }
+    var config = rdp.Config(username: o.user, password: password, domain: o.domain,
+                            width: uint16(float32(o.width) * scale), height: uint16(float32(o.height) * scale))
+    config.DesktopScale = uint32(scale * 100)
 
-    let viewer = Viewer(win: win, session: session, cmdAsWin: o.cmdAsWin)
+    print("rdpviewer: connecting to \(o.address) as \(o.user)…")
+    let viewer = Viewer(win: win, address: o.address, config: config, scale: scale, cmdAsWin: o.cmdAsWin)
     let _ = Task {
         await viewer.pump()
     }
-    viewer.requestFrame()
 
     while let event = await win.WaitEvent() {
         if !(await viewer.handle(event)) {
@@ -475,7 +518,7 @@ func main() async -> int32 {
         }
     }
     await viewer.releaseAll()
-    session.Close()
+    if let s = viewer.session { s.Close() }
     win.Close()
     return 0
 }
