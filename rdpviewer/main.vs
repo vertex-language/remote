@@ -14,31 +14,23 @@ package main
 import "ui/window"
 import "remote/rdp"
 import "fs"
+import "os/env"
+import "os/term"
 
-@_silgen_name("getpass")
-func c_getpass(_ prompt: UnsafePointer<CChar>) -> UnsafeMutablePointer<CChar>?
-
-@_silgen_name("getenv")
-func c_getenv(_ name: UnsafePointer<CChar>) -> UnsafeMutablePointer<CChar>?
-
-// cBytes copies a NUL-terminated C string's bytes.
-func cBytes(_ p: UnsafeMutablePointer<CChar>?) -> [uint8] {
-    var out: [uint8] = []
-    guard let s = p else { return out }
-    var i = 0
-    while true {
-        let c = (s + i).pointee
-        if c == 0 { break }
-        out.append(uint8(bitPattern: c))
-        i += 1
-    }
-    return out
-}
-
+// readPassword is $RDP_PASSWORD, or what the person types at the terminal
+// with echo off; empty where neither gives one.
 func readPassword(_ prompt: string) -> [uint8] {
-    let env = "RDP_PASSWORD".withCString { k in cBytes(c_getenv(k)) }
-    if env.count > 0 { return env }
-    return prompt.withCString { p in cBytes(c_getpass(p)) }
+    if let fromEnv = env.Get("RDP_PASSWORD") {
+        if !fromEnv.isEmpty {
+            return [uint8](fromEnv.utf8)
+        }
+    }
+    do {
+        let typed = try term.ReadPassword(prompt: prompt)
+        return [uint8](typed.utf8)
+    } catch {
+        return []
+    }
 }
 
 /// Options is what the command line asked for.
