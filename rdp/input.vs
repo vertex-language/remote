@@ -40,17 +40,13 @@ public enum MouseButton {
 /// Scancode is a key's scan code set 1 make code, with the E0 prefix
 /// folded in as Extended.
 public struct Scancode {
-    // Low byte: the make code; 0x100: extended. One word, not a code and
-    // a bool, so that Scancode? lowers (vsc gap: optionals of structs
-    // with spare bits).
-    var value: uint16
+    public let Code: uint8
+    public let Extended: bool
 
     public init(_ code: uint8, extended: bool = false) {
-        self.value = uint16(code) | (extended ? 0x100 : 0)
+        self.Code = code
+        self.Extended = extended
     }
-
-    public var Code: uint8 { return uint8(truncatingIfNeeded: value) }
-    public var Extended: bool { return value & 0x100 != 0 }
 }
 
 /// Input sends keyboard and mouse events. It is a small value around the
