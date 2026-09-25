@@ -1,5 +1,6 @@
-// The 'remote' package: protocols for remote access to an interactive
-// desktop, terminal or device. rdp is the first; vnc and ssh belong here too.
+// The 'remote' package: remote services and protocols -- the Hugging Face
+// Hub (hub), and remote access to an interactive desktop, terminal or
+// device (rdp; vnc and ssh belong here too).
 import PackageDescription
 
 let package = Package(
@@ -8,6 +9,7 @@ let package = Package(
         .macOS(.v14),
     ],
     products: [
+        .library(name: "remote/hub", targets: ["hub"]),
         .library(name: "remote/rdp", targets: ["rdp"]),
         .library(name: "remote/rdp/x224", targets: ["rdp_x224"]),
         .library(name: "remote/rdp/wire", targets: ["rdp_wire"]),
@@ -15,14 +17,41 @@ let package = Package(
         .library(name: "remote/rdp/fastpath", targets: ["rdp_fastpath"]),
         .library(name: "remote/rdp/codec/interleaved", targets: ["rdp_codec_interleaved"]),
         .library(name: "remote/rdp/codec/planar", targets: ["rdp_codec_planar"]),
+        .executable(name: "hub", targets: ["hub_tool"]),
         .executable(name: "rdpviewer", targets: ["rdpviewer"]),
         .executable(name: "rdp-test", targets: ["rdp_test"]),
         .executable(name: "rdp-codec-test", targets: ["rdp_codec_test"]),
         .executable(name: "rdp-screenshot", targets: ["rdp_screenshot"]),
         .executable(name: "rdp-input", targets: ["rdp_input"]),
         .executable(name: "rdp-run", targets: ["rdp_run"]),
+        .executable(name: "hub-test", targets: ["hub_test"]),
+        .executable(name: "hub-live-test", targets: ["hub_live_test"]),
     ],
     targets: [
+        // The Hugging Face Hub: references, resolving them to a commit,
+        // and downloads into Hugging Face's own cache.
+        .target(
+            name: "hub",
+            path: "hub"
+        ),
+        // The command line: resolve, download, list the cache.
+        .executableTarget(
+            name: "hub_tool",
+            dependencies: ["hub"],
+            path: "hubtool"
+        ),
+        // References, selection, globs and the cache, offline.
+        .executableTarget(
+            name: "hub_test",
+            dependencies: ["hub"],
+            path: "tests/hub"
+        ),
+        // Live: resolve and download from huggingface.co.
+        .executableTarget(
+            name: "hub_live_test",
+            dependencies: ["hub"],
+            path: "tests/hub_live"
+        ),
         // RDP transport framing: TPKT, X.224, security negotiation, and the
         // TPKT/fast-path frame splitter ([MS-RDPBCGR] 2.2.1).
         .target(
