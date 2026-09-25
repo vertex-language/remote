@@ -1,10 +1,19 @@
 # remote
 
-[![package: stdlib](https://img.shields.io/badge/package-stdlib-f4f4f5?style=flat-square&labelColor=e4e4e7&color=18181b)](https://github.com/vertex-language)
+[![package: vs-package](https://img.shields.io/badge/package-vs--package-f4f4f5?style=flat-square&labelColor=e4e4e7&color=18181b)](https://github.com/vertex-language)
+[![protocols: rdp](https://img.shields.io/badge/protocols-rdp-f4f4f5?style=flat-square&labelColor=e4e4e7&color=18181b)](https://github.com/vertex-language/remote)
 
-Protocols for remote access to an interactive desktop, terminal or device.
-`net/` moves bytes; the packages here interpret them as a screen, a keyboard
-and a mouse. RDP is the first; VNC and SSH belong here too.
+Protocols for remote desktop, terminal, and device access: interactive screen framebuffers, input handling, and session negotiation.
+
+---
+
+## Quick Start
+
+Run any entry point with:
+
+```bash
+vsc run main.vs
+```
 
 ---
 
@@ -12,7 +21,7 @@ and a mouse. RDP is the first; VNC and SSH belong here too.
 
 | Package | What it is |
 | :--- | :--- |
-| **`remote/rdp`** | RDP client for stock Windows: TCP → X.224 → TLS 1.2 → CredSSP/NTLMv2 (NLA) → MCS/GCC → licensing → capabilities → an active session that decodes the desktop into a framebuffer and sends keyboard and mouse input. The only rdp package that does I/O. |
+| **`remote/rdp`** | RDP client: TCP → X.224 → TLS 1.2 → CredSSP/NTLMv2 (NLA) → MCS/GCC → licensing → capabilities → an active session that decodes the desktop into a framebuffer and sends keyboard and mouse input. |
 | `remote/rdp/x224` | TPKT, X.224, security negotiation, the TPKT/fast-path frame splitter. |
 | `remote/rdp/wire` | The PER/BER subsets MCS and GCC use. |
 | `remote/rdp/fastpath` | Fast-path update parsing and fragment reassembly. |
@@ -24,24 +33,27 @@ and a mouse. RDP is the first; VNC and SSH belong here too.
 
 Authentication and TLS live in `crypto/` (`tls`, `credssp`, `ntlm`, `x509`, …).
 
+---
+
 ## rdpviewer
 
 ```bash
-vsc build
-RDP_PASSWORD=… ./.build/vsc/debug/rdpviewer connection.rdp        # or: host[:port] user
+RDP_PASSWORD=… vsc run rdpviewer -- connection.rdp        # or: host[:port] user
 ```
 
-Options: `--size WxH` (points), `--cmd-as-win` (Command is the Windows key
-rather than Control), `--no-hidpi`. The password is asked for when
-`RDP_PASSWORD` isn't set.
+Options: `--size WxH` (points), `--cmd-as-win` (Command is the Windows key rather than Control), `--no-hidpi`. The password is asked for when `RDP_PASSWORD` isn't set.
+
+---
 
 ## Tests
 
 ```bash
-vsc build
-./.build/vsc/debug/rdp-test          # x224 against spec bytes
-./.build/vsc/debug/rdp-codec-test    # codecs and fast-path
-./.build/vsc/debug/rdp-screenshot <host[:port]> <user> <password> desktop.png [WxH] [scale%]  # live
-./.build/vsc/debug/rdp-input <host> <user> <password> out.png      # live: drives Notepad
-./.build/vsc/debug/rdp-run <host> <user> <password> "<command>" out.png   # live: Win+R, screenshot
+vsc run rdp-test          # x224 against spec bytes
+vsc run rdp-codec-test    # codecs and fast-path
 ```
+
+---
+
+## License
+
+[MIT](LICENSE)
