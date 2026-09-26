@@ -1,7 +1,9 @@
 package main
 
-import "fs"
-import "remote/hub"
+import (
+    "fs"
+    "remote/hub"
+)
 
 // Offline: references, file selection, globs and the cache's layout.
 // cmd/hub-live-test talks to huggingface.co.

@@ -5,11 +5,13 @@
 //     rdp-screenshot <host[:port]> <user> <password> [out.png] [WxH] [scale%]
 package main
 
-import "remote/rdp"
-import "image"
-import "image/png"
-import "fs"
-import "time"
+import (
+    "fs"
+    "image"
+    "image/png"
+    "remote/rdp"
+    "time"
+)
 
 func main() async -> int32 {
     let args = CommandLine.arguments

@@ -5,11 +5,13 @@
 //     rdp-input <host[:port]> <user> <password> [out.png]
 package main
 
-import "remote/rdp"
-import "image"
-import "image/png"
-import "fs"
-import "time"
+import (
+    "fs"
+    "image"
+    "image/png"
+    "remote/rdp"
+    "time"
+)
 
 final class Pump {
     let session: rdp.Session

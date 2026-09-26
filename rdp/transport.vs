@@ -1,7 +1,9 @@
 package rdp
 
-import "crypto/tls"
-import "remote/rdp/x224"
+import (
+    "crypto/tls"
+    "remote/rdp/x224"
+)
 
 /// Sender is the write half of the connection. The session and its Input
 /// share one, from different tasks: writes queue up and go out whole and

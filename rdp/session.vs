@@ -4,12 +4,14 @@
 // control traffic (Set Error Info, Deactivate All, Save Session Info).
 package rdp
 
-import "encoding/binary"
-import "remote/rdp/x224"
-import "remote/rdp/gfx"
-import "remote/rdp/fastpath"
-import "remote/rdp/codec/interleaved"
-import "remote/rdp/codec/planar"
+import (
+    "encoding/binary"
+    "remote/rdp/codec/interleaved"
+    "remote/rdp/codec/planar"
+    "remote/rdp/fastpath"
+    "remote/rdp/gfx"
+    "remote/rdp/x224"
+)
 
 /// Event is what a Session reports to its consumer.
 public enum Event {

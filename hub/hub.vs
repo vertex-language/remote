@@ -1,11 +1,13 @@
 package hub
 
-import "fs"
-import "os/env"
-import "net/http"
-import "encoding/json"
-import "crypto/sha1"
-import "crypto/sha256"
+import (
+    "crypto/sha1"
+    "crypto/sha256"
+    "encoding/json"
+    "fs"
+    "net/http"
+    "os/env"
+)
 
 /// Snapshot is a repository pinned to a commit, and the files a
 /// reference asked for.

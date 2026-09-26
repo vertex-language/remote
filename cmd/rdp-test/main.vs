@@ -1,8 +1,10 @@
 // rdp-test checks x224 PDUs against bytes from the spec.
 package main
 
-import "encoding/binary"
-import "remote/rdp/x224"
+import (
+    "encoding/binary"
+    "remote/rdp/x224"
+)
 
 var failures = 0
 func check(_ ok: bool, _ msg: string) {

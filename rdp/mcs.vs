@@ -5,8 +5,10 @@
 // package moves the bytes over the authenticated channel.
 package rdp
 
-import "encoding/binary"
-import "remote/rdp/wire"
+import (
+    "encoding/binary"
+    "remote/rdp/wire"
+)
 
 let gccObjectID: [uint8] = [0, 0, 20, 124, 0, 1]
 let h221ClientToServer: [uint8] = [0x44, 0x75, 0x63, 0x61]   // "Duca"

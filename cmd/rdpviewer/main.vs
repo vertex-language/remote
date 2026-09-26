@@ -11,11 +11,13 @@
 // it the Windows key.
 package main
 
-import "ui/window"
-import "remote/rdp"
-import "fs"
-import "os/env"
-import "os/term"
+import (
+    "fs"
+    "os/env"
+    "os/term"
+    "remote/rdp"
+    "ui/window"
+)
 
 // readPassword is $RDP_PASSWORD, or what the person types at the terminal
 // with echo off; empty where neither gives one.

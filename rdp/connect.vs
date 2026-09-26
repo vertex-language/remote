@@ -1,9 +1,11 @@
 package rdp
 
-import "net/tcp"
-import "crypto/tls"
-import "crypto/credssp"
-import "remote/rdp/x224"
+import (
+    "crypto/credssp"
+    "crypto/tls"
+    "net/tcp"
+    "remote/rdp/x224"
+)
 
 /// Config configures an RDP connection.
 public struct Config {
@@ -65,8 +67,10 @@ func connectTransport(_ address: string, config: Config, trace: bool) async thro
     info.SelectedProtocol = cc.SelectedProtocol
     if trace { print("  x224: selected protocol \(cc.SelectedProtocol)") }
 
-    // 2. TLS 1.2.
-    var tlsConn = tls.Conn12(stream: stream, config: tls.Config(serverName: host, insecureSkipVerify: false))
+    // 2. TLS 1.2. An RDP server's certificate is usually self-signed, so
+    // no chain is checked: the server proves it holds the key, and CredSSP
+    // binds the session to that key below.
+    var tlsConn = tls.Conn12(stream: stream, config: tls.Config(serverName: host, verifyChain: false))
     try await tlsConn.Handshake()
     if trace { print("  tls: up, server cert \(tlsConn.PeerCertificate.Subject)") }
 

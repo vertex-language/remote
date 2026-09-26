@@ -1,9 +1,11 @@
 // hub-live-test resolves and downloads from huggingface.co.
 package main
 
-import "fs"
-import "crypto/sha256"
-import "remote/hub"
+import (
+    "crypto/sha256"
+    "fs"
+    "remote/hub"
+)
 
 // Live: against huggingface.co, into a cache in a temporary directory.
 // stories260K.gguf (1.2 MB) is the file; model/testdata has the same one.

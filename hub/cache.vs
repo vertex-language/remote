@@ -1,8 +1,10 @@
 package hub
 
-import "fs"
-import "os/env"
-import "os/user"
+import (
+    "fs"
+    "os/env"
+    "os/user"
+)
 
 /// Cache is the Hugging Face hub cache, in Hugging Face's layout, shared
 /// with huggingface_hub and everything built on it:

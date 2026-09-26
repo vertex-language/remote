@@ -2,10 +2,12 @@
 // framebuffer blits, with hand-assembled vectors from the specs.
 package main
 
-import "remote/rdp/fastpath"
-import "remote/rdp/gfx"
-import "remote/rdp/codec/interleaved"
-import "remote/rdp/codec/planar"
+import (
+    "remote/rdp/codec/interleaved"
+    "remote/rdp/codec/planar"
+    "remote/rdp/fastpath"
+    "remote/rdp/gfx"
+)
 
 var failures = 0
 func check(_ ok: bool, _ msg: string) {

@@ -9,10 +9,19 @@ Remote services and protocols: the Hugging Face Hub, and remote desktop, termina
 
 ## Quick Start
 
-Run any entry point with:
+Run tools and services in `cmd/` directly with `vsc run`:
 
 ```bash
-vsc run main.vs
+# Resolve and download from Hugging Face Hub
+vsc run hub -- resolve hf.co/unsloth/Qwen3-0.6B-GGUF
+vsc run hub -- download hf.co/Qwen/Qwen3-0.6B --include '*.json'
+
+# Launch the RDP viewer
+RDP_PASSWORD=… vsc run rdpviewer -- connection.rdp
+
+# Run test suites
+vsc run hub-test
+vsc run rdp-test
 ```
 
 ---
