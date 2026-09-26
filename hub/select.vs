@@ -162,10 +162,16 @@ func splitStem(_ path: string) -> string? {
 /// Match reports whether path matches a glob pattern: '*' is any run of
 /// characters but '/', "**" any run including '/', '?' any one
 /// character. A pattern with no '/' is matched against the file's name
-/// alone, so "*.json" finds JSON files in any directory.
+/// alone, so "*.json" finds JSON files in any directory; one starting
+/// with '/' is anchored at the repository's root, as in .gitignore, so
+/// "/*.json" finds only those at the top.
 public func Match(_ pattern: string, _ path: string) -> bool {
-    let p = [uint8](pattern.utf8)
+    var p = [uint8](pattern.utf8)
     var s = [uint8](path.utf8)
+    if p.first == 0x2F {
+        p.removeFirst()
+        return globMatch(p, 0, s, 0)
+    }
     if !p.contains(0x2F) {
         if let slash = s.lastIndex(of: 0x2F) {
             s = Array(s[(slash + 1)..<s.count])

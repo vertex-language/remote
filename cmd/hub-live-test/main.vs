@@ -1,3 +1,4 @@
+// hub-live-test resolves and downloads from huggingface.co.
 package main
 
 import "fs"

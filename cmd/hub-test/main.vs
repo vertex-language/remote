@@ -4,7 +4,7 @@ import "fs"
 import "remote/hub"
 
 // Offline: references, file selection, globs and the cache's layout.
-// tests/hub_live talks to huggingface.co.
+// cmd/hub-live-test talks to huggingface.co.
 
 var failures = 0
 
@@ -120,6 +120,7 @@ func main() async -> int32 {
     check(hub.Match("**/*.onnx", "model.onnx"), "**/ matches no directory")
     check(hub.Match("model-?????-of-*.safetensors", "model-00001-of-00002.safetensors"), "?")
     check(!hub.Match("*.json", "config.jsonl"), "no partial match")
+    check(hub.Match("/*.json", "config.json") && !hub.Match("/*.json", "sub/config.json"), "a leading '/' anchors at the root")
 
     // The cache: its layout, refs, links and what it lists back.
     do {
