@@ -6,6 +6,7 @@ import (
     "encoding/json"
     "fs"
     "net/http"
+    "net/url"
     "os/env"
 )
 
@@ -188,15 +189,15 @@ public struct Hub {
 
     // open sends a request and follows redirects to a 2xx answer, whose
     // body is left to read. The token goes only to the endpoint's host.
-    func open(_ method: string, _ url: string, _ ref: Ref, rangeFrom: int64 = 0) async throws -> http.ResponseStream {
+    func open(_ method: string, _ address: string, _ ref: Ref, rangeFrom: int64 = 0) async throws -> http.ResponseStream {
         let client = http.Client(timeoutMs: 30000)
-        let home = try http.URL.Parse(self.Endpoint)
-        var u = try http.URL.Parse(url)
+        let home = try url.Parse(self.Endpoint)
+        var u = try url.Parse(address)
         var hops = 0
         while true {
-            var req = http.Request(method: method, url: u.Path)
+            var req = http.Request(method: method, url: u.RequestURI)
             req.Headers.Set("User-Agent", "vertex-hub/0.1")
-            if let t = self.Token, u.Host == home.Host && u.Scheme == home.Scheme {
+            if let t = self.Token, u.Origin == home.Origin {
                 req.Headers.Set("Authorization", "Bearer \(t)")
             }
             if rangeFrom > 0 {
@@ -217,11 +218,7 @@ public struct Hub {
                 if hops > 10 {
                     throw HubError.status(code, "too many redirects")
                 }
-                if loc.hasPrefix("/") {
-                    u = http.URL(scheme: u.Scheme, host: u.Host, port: u.Port, path: loc)
-                } else {
-                    u = try http.URL.Parse(loc)
-                }
+                u = try u.Resolve(loc)
                 continue
             }
             let errCode = s.Response.Headers.Get("X-Error-Code") ?? ""
