@@ -4,7 +4,10 @@
 // never needed.
 package rdp
 
-import "encoding/binary"
+import (
+    "encoding/binary"
+    "math"
+)
 
 // Fast-path input event codes (the top three bits of the event header).
 let fpEventScancode: uint8 = 0
@@ -165,9 +168,7 @@ func eventHeader(_ code: uint8, _ flags: uint8) -> uint8 {
 }
 
 func clampCoord(_ v: int) -> uint16 {
-    if v < 0 { return 0 }
-    if v > 0x7FFF { return 0x7FFF }
-    return uint16(v)
+    return uint16(math.Clamp(v, 0, 0x7FFF))
 }
 
 func appendU16(_ b: inout [uint8], _ v: uint16) {

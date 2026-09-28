@@ -8,6 +8,8 @@
 // row order, which for bitmap updates is bottom-up.
 package planar
 
+import "math"
+
 /// PlanarError is a malformed planar stream.
 public enum PlanarError: Error {
     case truncated
@@ -119,11 +121,7 @@ func signed8(_ v: int) -> int {
     return v >= 128 ? v - 256 : v
 }
 
-func clamp(_ v: int) -> uint8 {
-    if v < 0 { return 0 }
-    if v > 255 { return 255 }
-    return uint8(truncatingIfNeeded: v)
-}
+func clamp(_ v: int) -> uint8 { return uint8(math.Clamp(v, 0, 255)) }
 
 // decodePlane expands one RLE plane ([MS-RDPEGDI] 2.2.2.5.1.1) into dst,
 // undoing the scanline delta transform, and returns the position after it.
