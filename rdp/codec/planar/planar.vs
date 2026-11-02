@@ -29,7 +29,7 @@ public enum PlanarError: Error {
 
 /// Decode expands a planar stream for a width * height bitmap into
 /// width * height * 3 bytes of RGB.
-public func Decode(_ src: [uint8], width: int, height: int) throws -> [uint8] {
+public func Decode(src: [uint8], width: int, height: int) throws -> [uint8] {
     if width <= 0 || height <= 0 { throw PlanarError.empty }
     if src.count < 1 { throw PlanarError.truncated }
     let header = src[0]
@@ -117,15 +117,15 @@ public func Decode(_ src: [uint8], width: int, height: int) throws -> [uint8] {
 }
 
 // signed8 reinterprets a byte value as two's-complement.
-func signed8(_ v: int) -> int {
+func signed8(v: int) -> int {
     return v >= 128 ? v - 256 : v
 }
 
-func clamp(_ v: int) -> uint8 { return uint8(math.Clamp(v, 0, 255)) }
+func clamp(v: int) -> uint8 { return uint8(math.Clamp(v, 0, 255)) }
 
 // decodePlane expands one RLE plane ([MS-RDPEGDI] 2.2.2.5.1.1) into dst,
 // undoing the scanline delta transform, and returns the position after it.
-func decodePlane(_ src: [uint8], from start: int, into dst: inout [uint8], width: int, height: int) throws -> int {
+func decodePlane(src: [uint8], from start: int, into dst: inout [uint8], width: int, height: int) throws -> int {
     var pos = start
     var row = 0
     while row < height {

@@ -107,7 +107,7 @@ public final class Session {
 
     // --- fast-path ---
 
-    func handleFastPath(_ bytes: [uint8]) throws {
+    func handleFastPath(bytes: [uint8]) throws {
         let updates = try reassembler.Feed(bytes)
         var damage = gfx.Rect(x: 0, y: 0, width: 0, height: 0)
         for u in updates {
@@ -150,7 +150,7 @@ public final class Session {
         }
     }
 
-    func pushPointer(_ img: fastpath.PointerImage) {
+    func pushPointer(img: fastpath.PointerImage) {
         let cursor = decodePointer(img)
         if img.CacheIndex >= 0 && img.CacheIndex < 64 {
             while pointerCache.count <= img.CacheIndex {
@@ -164,7 +164,7 @@ public final class Session {
 
     // applyBitmap decodes one bitmap rectangle into the framebuffer and
     // returns the damaged area.
-    func applyBitmap(_ b: fastpath.BitmapData) -> gfx.Rect {
+    func applyBitmap(b: fastpath.BitmapData) -> gfx.Rect {
         let dst = gfx.Rect(x: b.Left, y: b.Top, width: b.Right - b.Left + 1, height: b.Bottom - b.Top + 1)
         if b.Compressed {
             if b.BitsPerPixel == 32 {
@@ -201,7 +201,7 @@ public final class Session {
         return blitRaw(packed, b, dst)
     }
 
-    func blitRaw(_ raw: [uint8], _ b: fastpath.BitmapData, _ dst: gfx.Rect) -> gfx.Rect {
+    func blitRaw(raw: [uint8], b: fastpath.BitmapData, dst: gfx.Rect) -> gfx.Rect {
         switch b.BitsPerPixel {
         case 8: return Framebuffer.BlitPalette8(raw, srcWidth: b.Width, palette: palette, into: dst, bottomUp: true)
         case 15: return Framebuffer.Blit15(raw, srcWidth: b.Width, into: dst, bottomUp: true)
@@ -216,7 +216,7 @@ public final class Session {
 
     // --- slow-path ---
 
-    func handleSlowPath(_ bytes: [uint8]) async throws {
+    func handleSlowPath(bytes: [uint8]) async throws {
         let payload = try x224.UnwrapData(bytes)
         // Anything that isn't an MCS Send Data Indication (e.g. a Disconnect
         // Provider Ultimatum) ends the session.
@@ -257,7 +257,7 @@ public final class Session {
         }
     }
 
-    func handleDataPDU(_ pduType2: uint8, _ r: inout binary.Reader) throws {
+    func handleDataPDU(pduType2: uint8, r: inout binary.Reader) throws {
         switch pduType2 {
         case pduType2ErrorInfo:
             let code = try r.U32LE()
@@ -314,7 +314,7 @@ public final class Session {
 
     // decodePointer converts a wire pointer (XOR colour mask + AND
     // transparency mask, bottom-up, rows padded to 2 bytes) into RGBA.
-    func decodePointer(_ p: fastpath.PointerImage) -> PointerShape {
+    func decodePointer(p: fastpath.PointerImage) -> PointerShape {
         let w = p.Width
         let h = p.Height
         var px = [uint8](repeating: 0, count: w * h * 4)
@@ -385,7 +385,7 @@ public final class Session {
 }
 
 /// describeErrorInfo names a Set Error Info code ([MS-RDPBCGR] 2.2.5.1.1).
-public func describeErrorInfo(_ code: uint32) -> string {
+public func describeErrorInfo(code: uint32) -> string {
     switch code {
     case 0x0001: return "disconnected by server (RPC initiated)"
     case 0x0002: return "disconnected by another user (RPC initiated)"
@@ -403,7 +403,7 @@ public func describeErrorInfo(_ code: uint32) -> string {
     }
 }
 
-func hex32(_ v: uint32) -> string {
+func hex32(v: uint32) -> string {
     let digits: [string] = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"]
     var s = ""
     var shift: uint32 = 28

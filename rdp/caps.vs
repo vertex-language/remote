@@ -20,7 +20,7 @@ let capVirtualChannel: uint16 = 20
 let capMultifragmentUpdate: uint16 = 26
 let capLargePointer: uint16 = 27
 
-func capSet(_ type: uint16, _ data: [uint8]) -> [uint8] {
+func capSet(type: uint16, data: [uint8]) -> [uint8] {
     var w = binary.Writer()
     w.U16LE(type)
     w.U16LE(uint16(truncatingIfNeeded: data.count + 4))
@@ -170,7 +170,7 @@ func capLargePointerData() -> [uint8] {
 func buildConfirmActive(shareId: uint32, source: uint16, width: uint16, height: uint16, keyboardLayout: uint32) -> [uint8] {
     var caps = binary.Writer()
     var count = 0
-    func add(_ b: [uint8]) { caps.Append(b); count += 1 }
+    func add(b: [uint8]) { caps.Append(b); count += 1 }
     add(capSet(capGeneral, capGeneralData()))
     add(capSet(capBitmap, capBitmapData(width: width, height: height)))
     add(capSet(capOrder, capOrderData()))

@@ -17,7 +17,7 @@ public struct File {
 
 /// ParseFile reads an .rdp file's bytes: UTF-8, or UTF-16LE with a byte
 /// order mark as mstsc writes them.
-public func ParseFile(_ bytes: [uint8]) -> File {
+public func ParseFile(bytes: [uint8]) -> File {
     var text: [uint8] = []
     if bytes.count >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE {
         // UTF-16LE: the settings are ASCII, so keep the low bytes of units
@@ -45,7 +45,7 @@ public func ParseFile(_ bytes: [uint8]) -> File {
     return f
 }
 
-func applySetting(_ f: inout File, _ t: [uint8], _ start: int, _ end: int) {
+func applySetting(f: inout File, t: [uint8], start: int, end: int) {
     // name:type:value -- the name may not contain ':'.
     var c1 = start
     while c1 < end && t[c1] != 58 { c1 += 1 }
@@ -73,7 +73,7 @@ func applySetting(_ f: inout File, _ t: [uint8], _ start: int, _ end: int) {
     }
 }
 
-func lower(_ s: string) -> string {
+func lower(s: string) -> string {
     var b = [uint8](s.utf8)
     var i = 0
     while i < b.count {
@@ -83,7 +83,7 @@ func lower(_ s: string) -> string {
     return bytesToString(b, 0, b.count)
 }
 
-func parseInt(_ s: string) -> int {
+func parseInt(s: string) -> int {
     var v = 0
     for c in s.utf8 {
         if c < 48 || c > 57 { break }

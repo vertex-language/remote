@@ -46,7 +46,7 @@ public struct ConnectionInfo {
 
 // connectTransport performs everything up to and including channel joins,
 // returning a ready Transport and the negotiated ConnectionInfo.
-func connectTransport(_ address: string, config: Config, trace: bool) async throws -> (Transport, ConnectionInfo) {
+func connectTransport(address: string, config: Config, trace: bool) async throws -> (Transport, ConnectionInfo) {
     let (dial, host) = splitAddress(address)
     var info = ConnectionInfo()
     info.Width = config.Width
@@ -133,7 +133,7 @@ func connectTransport(_ address: string, config: Config, trace: bool) async thro
 // finishConnection runs the secure settings exchange, licensing, capability
 // exchange and finalization. After it returns, the server begins sending
 // graphics.
-func finishConnection(_ t: inout Transport, _ info: inout ConnectionInfo, _ config: Config, trace: bool) async throws {
+func finishConnection(t: inout Transport, info: inout ConnectionInfo, config: Config, trace: bool) async throws {
     let user = info.UserChannel
     let io = info.IOChannel
 
@@ -172,7 +172,7 @@ func finishConnection(_ t: inout Transport, _ info: inout ConnectionInfo, _ conf
 // activate answers a Demand Active: Confirm Active with our capabilities,
 // then the client-to-server finalization batch. It runs at connection and
 // again after every Deactivate All.
-func activate(_ t: inout Transport, _ info: inout ConnectionInfo, _ config: Config, trace: bool) async throws {
+func activate(t: inout Transport, info: inout ConnectionInfo, config: Config, trace: bool) async throws {
     let user = info.UserChannel
     let io = info.IOChannel
     let shareId = info.ShareId
@@ -197,7 +197,7 @@ func activate(_ t: inout Transport, _ info: inout ConnectionInfo, _ config: Conf
 
 // looksLikeDemandActive checks whether a share PDU is a Demand Active,
 // trying both a 0- and 4-byte security-header offset.
-func looksLikeDemandActive(_ payload: [uint8]) -> bool {
+func looksLikeDemandActive(payload: [uint8]) -> bool {
     if payload.count >= 4 {
         let pt = uint16(payload[2]) | (uint16(payload[3]) << 8)
         if (pt & 0x0F) == pduTypeDemandActive { return true }
@@ -212,14 +212,14 @@ func looksLikeDemandActive(_ payload: [uint8]) -> bool {
 /// Connect dials a Windows host, authenticates with NLA, and runs the
 /// connection sequence; the returned Session then streams the desktop.
 /// address is "host" or "host:port" (3389 when no port is given).
-public func Connect(_ address: string, config: Config) async throws -> Session {
+public func Connect(address: string, config: Config) async throws -> Session {
     var (t, info) = try await connectTransport(address, config: config, trace: false)
     try await finishConnection(&t, &info, config, trace: false)
     return Session(transport: t, info: info, config: config)
 }
 
 /// ConnectTraced is Connect with the connection sequence printed.
-public func ConnectTraced(_ address: string, config: Config) async throws -> Session {
+public func ConnectTraced(address: string, config: Config) async throws -> Session {
     var (t, info) = try await connectTransport(address, config: config, trace: true)
     try await finishConnection(&t, &info, config, trace: true)
     var s = Session(transport: t, info: info, config: config)
@@ -228,7 +228,7 @@ public func ConnectTraced(_ address: string, config: Config) async throws -> Ses
 }
 
 /// ConnectForTest exposes the pre-graphics connection sequence for tests.
-public func ConnectForTest(_ address: string, config: Config, trace: bool) async throws -> (Transport, ConnectionInfo) {
+public func ConnectForTest(address: string, config: Config, trace: bool) async throws -> (Transport, ConnectionInfo) {
     var (t, info) = try await connectTransport(address, config: config, trace: trace)
     try await finishConnection(&t, &info, config, trace: trace)
     return (t, info)
@@ -236,7 +236,7 @@ public func ConnectForTest(_ address: string, config: Config, trace: bool) async
 
 // splitAddress turns "host", "host:port" or "[v6]:port" into the address
 // to dial (with 3389 filled in) and the bare host name TLS and NTLM use.
-func splitAddress(_ address: string) -> (string, string) {
+func splitAddress(address: string) -> (string, string) {
     let b = [uint8](address.utf8)
     var start = 0
     var end = b.count
@@ -268,9 +268,9 @@ func splitAddress(_ address: string) -> (string, string) {
 }
 
 @_silgen_name("vertex_string_from_utf8")
-func stringFromUtf8(_ ptr: UnsafeRawPointer, _ count: int64) -> string
+func stringFromUtf8(ptr: UnsafeRawPointer, count: int64) -> string
 
-func bytesToString(_ bytes: [uint8], _ start: int, _ end: int) -> string {
+func bytesToString(bytes: [uint8], start: int, end: int) -> string {
     if start >= end { return "" }
     return bytes.withUnsafeBytes { bp in
         stringFromUtf8(bp.baseAddress! + start, int64(end - start))

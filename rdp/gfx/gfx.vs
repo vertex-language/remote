@@ -27,7 +27,7 @@ public struct Rect {
     public var IsEmpty: bool { return Width <= 0 || Height <= 0 }
 
     /// Intersect clips the rectangle to another.
-    public func Intersect(_ o: Rect) -> Rect {
+    public func Intersect(o: Rect) -> Rect {
         let x0 = X > o.X ? X : o.X
         let y0 = Y > o.Y ? Y : o.Y
         let x1 = Right < o.Right ? Right : o.Right
@@ -37,7 +37,7 @@ public struct Rect {
     }
 
     /// Union is the smallest rectangle containing both.
-    public func Union(_ o: Rect) -> Rect {
+    public func Union(o: Rect) -> Rect {
         if IsEmpty { return o }
         if o.IsEmpty { return self }
         let x0 = X < o.X ? X : o.X
@@ -74,43 +74,43 @@ public struct Framebuffer {
 
     /// Blit16 writes 16bpp RGB565 rows (2 bytes per pixel, little-endian,
     /// srcWidth pixels per row) into dst. Rows are bottom-up when bottomUp.
-    public mutating func Blit16(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
+    public mutating func Blit16(src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
         return blit(src, srcWidth: srcWidth, bytesPerPixel: 2, format: formatRGB565, palette: [], into: dst, bottomUp: bottomUp)
     }
 
     /// Blit15 writes 15bpp RGB555 rows.
-    public mutating func Blit15(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
+    public mutating func Blit15(src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
         return blit(src, srcWidth: srcWidth, bytesPerPixel: 2, format: formatRGB555, palette: [], into: dst, bottomUp: bottomUp)
     }
 
     /// BlitBGR24 writes 24bpp rows whose bytes are blue, green, red (the
     /// order Windows uses for uncompressed and interleaved bitmaps).
-    public mutating func BlitBGR24(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
+    public mutating func BlitBGR24(src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
         return blit(src, srcWidth: srcWidth, bytesPerPixel: 3, format: formatBGR24, palette: [], into: dst, bottomUp: bottomUp)
     }
 
     /// BlitRGB24 writes 24bpp rows whose bytes are red, green, blue (what
     /// the planar codec produces).
-    public mutating func BlitRGB24(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
+    public mutating func BlitRGB24(src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
         return blit(src, srcWidth: srcWidth, bytesPerPixel: 3, format: formatRGB24, palette: [], into: dst, bottomUp: bottomUp)
     }
 
     /// BlitBGRX32 writes 32bpp rows whose bytes are blue, green, red, pad
     /// (uncompressed 32bpp bitmap data).
-    public mutating func BlitBGRX32(_ src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
+    public mutating func BlitBGRX32(src: [uint8], srcWidth: int, into dst: Rect, bottomUp: bool) -> Rect {
         return blit(src, srcWidth: srcWidth, bytesPerPixel: 4, format: formatBGRX32, palette: [], into: dst, bottomUp: bottomUp)
     }
 
     /// BlitPalette8 writes 8bpp indexed rows through a 256-entry RGB palette
     /// (3 bytes per entry, red first).
-    public mutating func BlitPalette8(_ src: [uint8], srcWidth: int, palette: [uint8], into dst: Rect, bottomUp: bool) -> Rect {
+    public mutating func BlitPalette8(src: [uint8], srcWidth: int, palette: [uint8], into dst: Rect, bottomUp: bool) -> Rect {
         var pal = palette
         while pal.count < 768 { pal.append(0) }
         return blit(src, srcWidth: srcWidth, bytesPerPixel: 1, format: formatPalette8, palette: pal, into: dst, bottomUp: bottomUp)
     }
 
     // blit converts the rows of src that land inside the framebuffer.
-    mutating func blit(_ src: [uint8], srcWidth: int, bytesPerPixel: int, format: int, palette: [uint8],
+    mutating func blit(src: [uint8], srcWidth: int, bytesPerPixel: int, format: int, palette: [uint8],
                        into dst: Rect, bottomUp: bool) -> Rect {
         let target = dst.Intersect(Bounds)
         if target.IsEmpty || srcWidth <= 0 { return target }
@@ -122,7 +122,7 @@ public struct Framebuffer {
     }
 
     /// Fill paints a rectangle a solid opaque color.
-    public mutating func Fill(_ rect: Rect, r: uint8, g: uint8, b: uint8) -> Rect {
+    public mutating func Fill(rect: Rect, r: uint8, g: uint8, b: uint8) -> Rect {
         let target = rect.Intersect(Bounds)
         if target.IsEmpty { return target }
         var row = 0
@@ -149,8 +149,8 @@ let formatPalette8 = 5
 // convertRows writes the part of an update inside target into the pixels,
 // converting each source pixel to opaque RGBA. It runs on raw pointers:
 // this is every pixel of every bitmap update.
-func convertRows(_ pixels: inout [uint8], _ src: [uint8], _ palette: [uint8], _ target: Rect, _ dst: Rect,
-                 _ width: int, _ rowBytes: int, _ srcRows: int, _ bpp: int, _ format: int, _ bottomUp: bool) {
+func convertRows(pixels: inout [uint8], src: [uint8], palette: [uint8], target: Rect, dst: Rect,
+                 width: int, rowBytes: int, srcRows: int, bpp: int, format: int, bottomUp: bool) {
     pixels.withUnsafeMutableBufferPointer { pb in
         src.withUnsafeBufferPointer { sb in
             palette.withUnsafeBufferPointer { palb in
@@ -224,6 +224,6 @@ func convertRows(_ pixels: inout [uint8], _ src: [uint8], _ palette: [uint8], _ 
 
 // sourceRow maps a destination row (0 = top of the update) to the row
 // index inside the source data.
-func sourceRow(_ row: int, height: int, bottomUp: bool) -> int {
+func sourceRow(row: int, height: int, bottomUp: bool) -> int {
     return bottomUp ? (height - 1 - row) : row
 }

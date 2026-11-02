@@ -46,7 +46,7 @@ public struct Scancode {
     public let Code: uint8
     public let Extended: bool
 
-    public init(_ code: uint8, extended: bool = false) {
+    public init(code: uint8, extended: bool = false) {
         self.Code = code
         self.Extended = extended
     }
@@ -63,20 +63,20 @@ public struct Input {
     }
 
     /// Key presses or releases a key by scan code.
-    public func Key(_ key: Scancode, down: bool) async throws {
+    public func Key(key: Scancode, down: bool) async throws {
         var flags: uint8 = down ? 0 : kbdFlagsRelease
         if key.Extended { flags |= kbdFlagsExtended }
         try await send([eventHeader(fpEventScancode, flags), key.Code])
     }
 
     /// Unicode types a UTF-16 code unit the keyboard layout can't reach.
-    public func Unicode(_ unit: uint16, down: bool) async throws {
+    public func Unicode(unit: uint16, down: bool) async throws {
         try await send([eventHeader(fpEventUnicode, down ? 0 : kbdFlagsRelease),
                         uint8(truncatingIfNeeded: unit), uint8(truncatingIfNeeded: unit >> 8)])
     }
 
     /// Text types a string as Unicode key presses.
-    public func Text(_ text: string) async throws {
+    public func Text(text: string) async throws {
         let le = binary.EncodeUTF16LE(text)
         var i = 0
         while i + 1 < le.count {
@@ -93,7 +93,7 @@ public struct Input {
     }
 
     /// Button presses or releases a mouse button at (x, y).
-    public func Button(_ b: MouseButton, down: bool, x: int, y: int) async throws {
+    public func Button(b: MouseButton, down: bool, x: int, y: int) async throws {
         switch b {
         case .left: try await mouse(PointerFlags.Button1 | (down ? PointerFlags.Down : 0), x, y)
         case .right: try await mouse(PointerFlags.Button2 | (down ? PointerFlags.Down : 0), x, y)
@@ -137,7 +137,7 @@ public struct Input {
         try await send([eventHeader(fpEventSync, flags)])
     }
 
-    func wheelEvent(_ kind: uint16, _ amount: int, _ x: int, _ y: int) async throws {
+    func wheelEvent(kind: uint16, amount: int, x: int, y: int) async throws {
         // A 9-bit two's complement rotation: the negative flag is bit 8.
         var flags = kind
         if amount < 0 {
@@ -148,7 +148,7 @@ public struct Input {
         try await mouse(flags, x, y)
     }
 
-    func mouse(_ flags: uint16, _ x: int, _ y: int) async throws {
+    func mouse(flags: uint16, x: int, y: int) async throws {
         var ev: [uint8] = [eventHeader(fpEventMouse, 0)]
         appendU16(&ev, flags)
         appendU16(&ev, clampCoord(x))
@@ -158,26 +158,26 @@ public struct Input {
 
     // send wraps events in a fast-path input PDU: header (action 0,
     // event count in bits 2-5, no encryption flags), then the length.
-    func send(_ events: [uint8]) async throws {
+    func send(events: [uint8]) async throws {
         try await out.Send(fastPathInputPDU(events, count: 1))
     }
 }
 
-func eventHeader(_ code: uint8, _ flags: uint8) -> uint8 {
+func eventHeader(code: uint8, flags: uint8) -> uint8 {
     return (code << 5) | (flags & 0x1F)
 }
 
-func clampCoord(_ v: int) -> uint16 {
+func clampCoord(v: int) -> uint16 {
     return uint16(math.Clamp(v, 0, 0x7FFF))
 }
 
-func appendU16(_ b: inout [uint8], _ v: uint16) {
+func appendU16(b: inout [uint8], v: uint16) {
     b.append(uint8(truncatingIfNeeded: v))
     b.append(uint8(truncatingIfNeeded: v >> 8))
 }
 
 /// fastPathInputPDU frames count events (at most 15) as one PDU.
-func fastPathInputPDU(_ events: [uint8], count: int) -> [uint8] {
+func fastPathInputPDU(events: [uint8], count: int) -> [uint8] {
     var out: [uint8] = [uint8(truncatingIfNeeded: (count & 0x0F) << 2)]
     // Length includes the header and the length field itself: one byte
     // below 0x80, else two with the top bit set.
@@ -196,7 +196,7 @@ func fastPathInputPDU(_ events: [uint8], count: int) -> [uint8] {
 /// ScancodeForCode maps a W3C KeyboardEvent.code name ("KeyA", "Enter",
 /// "ArrowLeft", "NumpadEnter", …) to its scan code, or nil for a code
 /// with none.
-public func ScancodeForCode(_ code: string) -> Scancode? {
+public func ScancodeForCode(code: string) -> Scancode? {
     switch code {
     case "Escape": return Scancode(0x01)
     case "Digit1": return Scancode(0x02)
@@ -309,6 +309,6 @@ public func ScancodeForCode(_ code: string) -> Scancode? {
 }
 
 // inputFor exists because inside Session the property Input hides the type.
-func inputFor(_ out: Sender) -> Input {
+func inputFor(out: Sender) -> Input {
     return Input(out: out)
 }

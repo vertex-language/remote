@@ -49,7 +49,7 @@ public struct ClientData {
 }
 
 // buildClientCoreData (CS_CORE, [MS-RDPBCGR] 2.2.1.3.2).
-func buildClientCoreData(_ d: ClientData) -> [uint8] {
+func buildClientCoreData(d: ClientData) -> [uint8] {
     var w = binary.Writer()
     w.U32LE(0x00080004)                 // version RDP 5.0+
     w.U16LE(d.DesktopWidth)
@@ -99,7 +99,7 @@ func buildClientSecurityData() -> [uint8] {
     return block(csSecurity, w.Bytes)
 }
 
-func buildClientNetworkData(_ channels: [string]) -> [uint8] {
+func buildClientNetworkData(channels: [string]) -> [uint8] {
     var w = binary.Writer()
     w.U32LE(uint32(truncatingIfNeeded: channels.count))
     for name in channels {
@@ -120,7 +120,7 @@ func buildClientClusterData() -> [uint8] {
     return block(csCluster, w.Bytes)
 }
 
-func block(_ type: uint16, _ data: [uint8]) -> [uint8] {
+func block(type: uint16, data: [uint8]) -> [uint8] {
     var w = binary.Writer()
     w.U16LE(type)
     w.U16LE(uint16(truncatingIfNeeded: data.count + 4))
@@ -129,7 +129,7 @@ func block(_ type: uint16, _ data: [uint8]) -> [uint8] {
 }
 
 // buildGCCBlocks concatenates the client data blocks.
-func buildGCCBlocks(_ d: ClientData) -> [uint8] {
+func buildGCCBlocks(d: ClientData) -> [uint8] {
     var out: [uint8] = []
     out.append(contentsOf: buildClientCoreData(d))
     out.append(contentsOf: buildClientSecurityData())
@@ -139,7 +139,7 @@ func buildGCCBlocks(_ d: ClientData) -> [uint8] {
 }
 
 // buildConferenceCreateRequest wraps the GCC blocks (T.124).
-func buildConferenceCreateRequest(_ gccBlocks: [uint8]) -> [uint8] {
+func buildConferenceCreateRequest(gccBlocks: [uint8]) -> [uint8] {
     var w = binary.Writer()
     wire.PERWriteChoice(&w, 0)                       // ConnectData::Key = object id
     wire.PERWriteObjectID(&w, gccObjectID)
@@ -159,7 +159,7 @@ func buildConferenceCreateRequest(_ gccBlocks: [uint8]) -> [uint8] {
 
 /// buildConnectInitial builds the MCS Connect Initial PDU (T.125) carrying
 /// the GCC conference create request.
-func buildConnectInitial(_ d: ClientData) -> [uint8] {
+func buildConnectInitial(d: ClientData) -> [uint8] {
     let gcc = buildGCCBlocks(d)
     let ccr = buildConferenceCreateRequest(gcc)
 
@@ -181,8 +181,8 @@ func buildConnectInitial(_ d: ClientData) -> [uint8] {
     return w.Bytes
 }
 
-func writeDomainParameters(_ w: inout binary.Writer, _ maxChannels: uint32, _ maxUsers: uint32,
-                           _ maxTokens: uint32, _ maxPduSize: uint32) {
+func writeDomainParameters(w: inout binary.Writer, maxChannels: uint32, maxUsers: uint32,
+                           maxTokens: uint32, maxPduSize: uint32) {
     var p = binary.Writer()
     wire.BERWriteInteger(&p, maxChannels)
     wire.BERWriteInteger(&p, maxUsers)
@@ -207,7 +207,7 @@ public struct ServerChannels {
 
 /// parseConnectResponse parses the MCS Connect Response and returns the
 /// server's I/O channel and any virtual channel IDs (SC_NET).
-func parseConnectResponse(_ pdu: [uint8]) throws -> ServerChannels {
+func parseConnectResponse(pdu: [uint8]) throws -> ServerChannels {
     var r = binary.Reader(pdu)
     let _ = try wire.BERReadApplicationTag(&r, 0x66)   // Connect-Response
     let _ = try wire.BERReadEnumerated(&r)             // result
@@ -223,7 +223,7 @@ func parseConnectResponse(_ pdu: [uint8]) throws -> ServerChannels {
 }
 
 // parseConferenceCreateResponse extracts the server data blocks.
-func parseConferenceCreateResponse(_ gcc: [uint8]) throws -> ServerChannels {
+func parseConferenceCreateResponse(gcc: [uint8]) throws -> ServerChannels {
     var r = binary.Reader(gcc)
     // Skip the T.124 header up to the user data blocks.
     let _ = try wire.PERReadLength(&r)   // choice/key is 2 bytes; handle leniently below
@@ -234,7 +234,7 @@ func parseConferenceCreateResponse(_ gcc: [uint8]) throws -> ServerChannels {
 
 // scanServerBlocks finds SC_NET in the GCC response by scanning for the
 // server data block headers (type LE + length LE).
-func scanServerBlocks(_ gcc: [uint8]) -> ServerChannels {
+func scanServerBlocks(gcc: [uint8]) -> ServerChannels {
     var sc = ServerChannels()
     // The user data blocks begin after the GCC ConferenceCreateResponse
     // header. Find the first plausible SC_CORE (0x0C01) header and parse
@@ -292,7 +292,7 @@ func mcsAttachUserRequest() -> [uint8] {
 }
 
 /// parseAttachUserConfirm returns the granted user channel id.
-func parseAttachUserConfirm(_ data: [uint8]) throws -> uint16 {
+func parseAttachUserConfirm(data: [uint8]) throws -> uint16 {
     var r = binary.Reader(data)
     let tag = try r.U8()
     if (tag >> 2) != 11 { throw RdpError.protocolError("expected AttachUserConfirm") }
@@ -311,7 +311,7 @@ func mcsChannelJoinRequest(userChannel: uint16, channel: uint16) -> [uint8] {
 }
 
 /// parseChannelJoinConfirm returns the joined channel id (or throws).
-func parseChannelJoinConfirm(_ data: [uint8]) throws -> uint16 {
+func parseChannelJoinConfirm(data: [uint8]) throws -> uint16 {
     var r = binary.Reader(data)
     let tag = try r.U8()
     if (tag >> 2) != 15 { throw RdpError.protocolError("expected ChannelJoinConfirm") }
@@ -337,7 +337,7 @@ func mcsSendDataRequest(userChannel: uint16, channel: uint16, data: [uint8]) -> 
 }
 
 /// parseSendDataIndication returns the channel id and the user payload.
-func parseSendDataIndication(_ data: [uint8]) throws -> (channel: uint16, payload: [uint8]) {
+func parseSendDataIndication(data: [uint8]) throws -> (channel: uint16, payload: [uint8]) {
     var r = binary.Reader(data)
     let tag = try r.U8()
     if (tag >> 2) != 26 { throw RdpError.protocolError("expected SendDataIndication, tag \(tag)") }

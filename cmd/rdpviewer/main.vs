@@ -21,7 +21,7 @@ import (
 
 // readPassword is $RDP_PASSWORD, or what the person types at the terminal
 // with echo off; empty where neither gives one.
-func readPassword(_ prompt: string) -> [uint8] {
+func readPassword(prompt: string) -> [uint8] {
     if let fromEnv = env.Get("RDP_PASSWORD") {
         if !fromEnv.isEmpty {
             return [uint8](fromEnv.utf8)
@@ -46,7 +46,7 @@ struct Options {
     var noScale: bool = false
 }
 
-func parseSize(_ s: string, _ o: inout Options) -> bool {
+func parseSize(s: string, o: inout Options) -> bool {
     var w = 0
     var h = 0
     var seenX = false
@@ -226,7 +226,7 @@ final class Viewer {
 
     // desktop maps a window point to a desktop pixel. The framebuffer is
     // stretched over the whole content area.
-    func desktop(_ p: window.Point) -> (int, int) {
+    func desktop(p: window.Point) -> (int, int) {
         let size = win.Size()
         guard let s = session else { return (0, 0) }
         let fb = s.Framebuffer
@@ -241,7 +241,7 @@ final class Viewer {
     }
 
     /// handle takes one window event; false once the viewer should close.
-    func handle(_ e: window.Event) async -> bool {
+    func handle(e: window.Event) async -> bool {
         if case .closeRequested = e { return false }
         guard let input = input else {
             // Connecting: only frames matter, to report a failure.
@@ -330,7 +330,7 @@ final class Viewer {
     }
 
     // modifiers brings the server's modifier keys in line with the Mac's.
-    func modifiers(_ m: window.Modifiers) async {
+    func modifiers(m: window.Modifiers) async {
         guard let input = input else { return }
         let wantShift = m.Shift
         let wantControl = m.Control || (m.Meta && !cmdAsWin)
@@ -376,7 +376,7 @@ final class Viewer {
     }
 }
 
-func mouseButton(_ b: window.PointerButton) -> rdp.MouseButton? {
+func mouseButton(b: window.PointerButton) -> rdp.MouseButton? {
     switch b {
     case .primary: return .left
     case .secondary: return .right
@@ -387,7 +387,7 @@ func mouseButton(_ b: window.PointerButton) -> rdp.MouseButton? {
 
 // scancode maps a key position to its scan code. Modifier keys arrive as
 // modifiersChanged and are handled there.
-func scancode(_ k: window.KeyCode) -> rdp.Scancode? {
+func scancode(k: window.KeyCode) -> rdp.Scancode? {
     switch k {
     case .shiftLeft, .shiftRight, .controlLeft, .controlRight, .altLeft, .altRight,
          .metaLeft, .metaRight, .capsLock, .unknown:
@@ -398,7 +398,7 @@ func scancode(_ k: window.KeyCode) -> rdp.Scancode? {
 }
 
 // codeName is a KeyCode's W3C KeyboardEvent.code name.
-func codeName(_ k: window.KeyCode) -> string {
+func codeName(k: window.KeyCode) -> string {
     switch k {
     case .a: return "KeyA"
     case .b: return "KeyB"

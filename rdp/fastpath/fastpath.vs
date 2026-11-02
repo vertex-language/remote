@@ -62,7 +62,7 @@ public struct Reassembler {
 
     /// Feed parses one fast-path PDU (header included) and returns the
     /// updates it completed.
-    public mutating func Feed(_ frame: [uint8]) throws -> [Update] {
+    public mutating func Feed(frame: [uint8]) throws -> [Update] {
         var r = binary.Reader(frame)
         var out: [Update] = []
         do {
@@ -145,7 +145,7 @@ public struct BitmapData {
 }
 
 /// ParseBitmapUpdate decodes a TS_UPDATE_BITMAP_DATA body.
-public func ParseBitmapUpdate(_ data: [uint8]) throws -> [BitmapData] {
+public func ParseBitmapUpdate(data: [uint8]) throws -> [BitmapData] {
     var r = binary.Reader(data)
     var out: [BitmapData] = []
     do {
@@ -188,7 +188,7 @@ public func ParseBitmapUpdate(_ data: [uint8]) throws -> [BitmapData] {
 // --- Palette update ([MS-RDPBCGR] 2.2.9.1.1.3.1.1) ---
 
 /// ParsePaletteUpdate returns the palette as 256 RGB triples (red first).
-public func ParsePaletteUpdate(_ data: [uint8]) throws -> [uint8] {
+public func ParsePaletteUpdate(data: [uint8]) throws -> [uint8] {
     var r = binary.Reader(data)
     var out = [uint8](repeating: 0, count: 256 * 3)
     do {
@@ -233,7 +233,7 @@ public struct PointerImage {
 }
 
 /// ParsePointerPosition decodes TS_POINTERPOSATTRIBUTE.
-public func ParsePointerPosition(_ data: [uint8]) throws -> (int, int) {
+public func ParsePointerPosition(data: [uint8]) throws -> (int, int) {
     var r = binary.Reader(data)
     do {
         let x = int(try r.U16LE())
@@ -245,7 +245,7 @@ public func ParsePointerPosition(_ data: [uint8]) throws -> (int, int) {
 }
 
 /// ParseCachedPointer decodes TS_CACHEDPOINTERATTRIBUTE.
-public func ParseCachedPointer(_ data: [uint8]) throws -> int {
+public func ParseCachedPointer(data: [uint8]) throws -> int {
     var r = binary.Reader(data)
     do {
         return int(try r.U16LE())
@@ -255,14 +255,14 @@ public func ParseCachedPointer(_ data: [uint8]) throws -> int {
 }
 
 /// ParseColorPointer decodes TS_COLORPOINTERATTRIBUTE (24bpp XOR mask).
-public func ParseColorPointer(_ data: [uint8]) throws -> PointerImage {
+public func ParseColorPointer(data: [uint8]) throws -> PointerImage {
     var r = binary.Reader(data)
     return try parseColorPointerBody(&r, xorBpp: 24)
 }
 
 /// ParseNewPointer decodes TS_FP_POINTERATTRIBUTE (xorBpp then a colour
 /// pointer).
-public func ParseNewPointer(_ data: [uint8]) throws -> PointerImage {
+public func ParseNewPointer(data: [uint8]) throws -> PointerImage {
     var r = binary.Reader(data)
     do {
         let bpp = int(try r.U16LE())
@@ -275,7 +275,7 @@ public func ParseNewPointer(_ data: [uint8]) throws -> PointerImage {
 }
 
 /// ParseLargePointer decodes TS_FP_LARGEPOINTERATTRIBUTE.
-public func ParseLargePointer(_ data: [uint8]) throws -> PointerImage {
+public func ParseLargePointer(data: [uint8]) throws -> PointerImage {
     var r = binary.Reader(data)
     var p = PointerImage()
     do {
@@ -295,7 +295,7 @@ public func ParseLargePointer(_ data: [uint8]) throws -> PointerImage {
     return p
 }
 
-func parseColorPointerBody(_ r: inout binary.Reader, xorBpp: int) throws -> PointerImage {
+func parseColorPointerBody(r: inout binary.Reader, xorBpp: int) throws -> PointerImage {
     var p = PointerImage()
     p.XorBpp = xorBpp
     do {

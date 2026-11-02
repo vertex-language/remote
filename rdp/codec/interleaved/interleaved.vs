@@ -49,7 +49,7 @@ let specialBlack: uint8 = 0xFE
 
 /// Decode expands an RLE stream into width * height pixels of bpp bits
 /// each (8, 15, 16 or 24). Rows come out bottom-up, as encoded.
-public func Decode(_ src: [uint8], width: int, height: int, bpp: int) throws -> [uint8] {
+public func Decode(src: [uint8], width: int, height: int, bpp: int) throws -> [uint8] {
     if width <= 0 || height <= 0 { throw InterleavedError.empty }
     var bytesPerPixel = 0
     var white: uint32 = 0
@@ -131,7 +131,7 @@ struct Decoder {
         return v
     }
 
-    mutating func writePixel(_ v: uint32) {
+    mutating func writePixel(v: uint32) {
         let p = dst + out
         p.pointee = uint8(truncatingIfNeeded: v)
         if bytesPerPixel >= 2 { (p + 1).pointee = uint8(truncatingIfNeeded: v >> 8) }
@@ -148,7 +148,7 @@ struct Decoder {
     }
 
     // room checks that pixels more fit, flagging overflow when not.
-    mutating func room(_ pixels: int) -> bool {
+    mutating func room(pixels: int) -> bool {
         if out + pixels * bytesPerPixel > dstCount {
             failure = 2
             return false
@@ -157,7 +157,7 @@ struct Decoder {
     }
 
     // runLength decodes the order's run length, reading extension bytes.
-    mutating func runLength(_ code: uint8, header: uint8) -> int {
+    mutating func runLength(code: uint8, header: uint8) -> int {
         switch code {
         case regularFgBgImage:
             let n = int(header & 0x1F)
@@ -185,7 +185,7 @@ struct Decoder {
         }
     }
 
-    mutating func fgBgImage(_ mask: uint8, bits: int) {
+    mutating func fgBgImage(mask: uint8, bits: int) {
         if !room(bits) { return }
         var m: uint8 = 1
         var n = bits

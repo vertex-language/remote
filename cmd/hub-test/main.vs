@@ -10,7 +10,7 @@ import (
 
 var failures = 0
 
-func check(_ ok: bool, _ msg: string) {
+func check(ok: bool, msg: string) {
     if ok {
         print("ok    \(msg)")
     } else {
@@ -19,7 +19,7 @@ func check(_ ok: bool, _ msg: string) {
     }
 }
 
-func parse(_ s: string) -> hub.Ref? {
+func parse(s: string) -> hub.Ref? {
     do {
         return try hub.Ref.Parse(s)
     } catch {
@@ -27,7 +27,7 @@ func parse(_ s: string) -> hub.Ref? {
     }
 }
 
-func paths(_ files: [hub.RepoFile]) -> [string] {
+func paths(files: [hub.RepoFile]) -> [string] {
     return files.map { $0.Path }
 }
 

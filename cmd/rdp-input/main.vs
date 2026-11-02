@@ -19,7 +19,7 @@ final class Pump {
     var logon: bool = false
     var ended: string = ""
 
-    init(_ session: rdp.Session) {
+    init(session: rdp.Session) {
         self.session = session
     }
 
@@ -41,17 +41,17 @@ final class Pump {
     }
 }
 
-func pause(_ ms: int64) async {
+func pause(ms: int64) async {
     try? await time.Sleep(time.Duration.Milliseconds(ms))
 }
 
-func tap(_ input: rdp.Input, _ code: string) async throws {
+func tap(input: rdp.Input, code: string) async throws {
     guard let sc = rdp.ScancodeForCode(code) else { return }
     try await input.Key(sc, down: true)
     try await input.Key(sc, down: false)
 }
 
-func typeKeys(_ input: rdp.Input, _ codes: [string]) async throws {
+func typeKeys(input: rdp.Input, codes: [string]) async throws {
     for c in codes {
         try await tap(input, c)
         await pause(30)

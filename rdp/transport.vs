@@ -19,7 +19,7 @@ public final class Sender {
     }
 
     /// Send writes bytes to the server as they are (already framed).
-    public func Send(_ bytes: [uint8]) async throws {
+    public func Send(bytes: [uint8]) async throws {
         if !failed.isEmpty { throw RdpError.protocolError(failed) }
         queue.append(bytes)
         // Whoever is already writing drains the queue, this one included.
@@ -41,7 +41,7 @@ public final class Sender {
     }
 
     /// SendX224 wraps a payload in an X.224 Data PDU and sends it.
-    public func SendX224(_ payload: [uint8]) async throws {
+    public func SendX224(payload: [uint8]) async throws {
         try await Send(x224.WrapData(payload))
     }
 
@@ -71,7 +71,7 @@ public struct Transport {
     }
 
     /// SendX224 wraps a payload in an X.224 Data PDU and sends it.
-    public func SendX224(_ payload: [uint8]) async throws {
+    public func SendX224(payload: [uint8]) async throws {
         try await Out.SendX224(payload)
     }
 

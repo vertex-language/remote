@@ -45,14 +45,14 @@ public struct Ref: Equatable, CustomStringConvertible {
     /// A path inside the repository, or "" for the whole of it.
     public var File: string = ""
 
-    public init(_ repo: string, kind: RepoKind = RepoKind.model, revision: string = "main") {
+    public init(repo: string, kind: RepoKind = RepoKind.model, revision: string = "main") {
         self.Repo = repo
         self.Kind = kind
         self.Revision = revision
     }
 
     /// Parse reads a reference in any of the forms above.
-    public static func Parse(_ text: string) throws -> Ref {
+    public static func Parse(text: string) throws -> Ref {
         var s = text
         for scheme in ["https://", "http://"] {
             if s.hasPrefix(scheme) {
@@ -199,7 +199,7 @@ public enum HubError: Error, CustomStringConvertible {
 let hexDigits: [uint8] = [uint8]("0123456789ABCDEF".utf8)
 
 // escape percent-encodes a path segment, or a path with its slashes kept.
-func escape(_ s: string, keepSlash: bool = false) -> string {
+func escape(s: string, keepSlash: bool = false) -> string {
     var out: [uint8] = []
     for b in s.utf8 {
         let unreserved = (b >= 0x41 && b <= 0x5A) || (b >= 0x61 && b <= 0x7A) || (b >= 0x30 && b <= 0x39) ||
@@ -216,7 +216,7 @@ func escape(_ s: string, keepSlash: bool = false) -> string {
 }
 
 // unescape decodes %XX; anything malformed is left as it is.
-func unescape(_ s: string) -> string {
+func unescape(s: string) -> string {
     let b = [uint8](s.utf8)
     var out: [uint8] = []
     var i = 0
@@ -236,7 +236,7 @@ func unescape(_ s: string) -> string {
     return String(decoding: out, as: UTF8.self)
 }
 
-func hexValue(_ c: uint8) -> int {
+func hexValue(c: uint8) -> int {
     if c >= 0x30 && c <= 0x39 { return int(c - 0x30) }
     if c >= 0x61 && c <= 0x66 { return int(c - 0x61 + 10) }
     if c >= 0x41 && c <= 0x46 { return int(c - 0x41 + 10) }
@@ -244,7 +244,7 @@ func hexValue(_ c: uint8) -> int {
 }
 
 // isCommit reports whether a revision is a full commit hash.
-func isCommit(_ rev: string) -> bool {
+func isCommit(rev: string) -> bool {
     if rev.utf8.count != 40 {
         return false
     }

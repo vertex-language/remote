@@ -157,7 +157,7 @@ public struct ConnectionConfirm {
     public init() {}
 
     /// Parse reads a full TPKT+X.224 Connection Confirm PDU.
-    public static func Parse(_ pdu: [uint8]) throws -> ConnectionConfirm {
+    public static func Parse(pdu: [uint8]) throws -> ConnectionConfirm {
         var r = binary.Reader(pdu)
         try parseTPKT(&r)
         // X.224 header: LI, code|CDT, DST-REF(2), SRC-REF(2), CLASS(1).
@@ -216,7 +216,7 @@ public struct ConnectionConfirm {
 
 /// WrapData wraps a payload in an X.224 Data PDU inside a TPKT. This is the
 /// "slow path": MCS and share-control PDUs travel this way.
-public func WrapData(_ payload: [uint8]) -> [uint8] {
+public func WrapData(payload: [uint8]) -> [uint8] {
     var x = binary.Writer()
     x.U8(0x02)              // LI: 2 bytes follow
     x.U8(tpduData)          // TPDU code: Data
@@ -227,7 +227,7 @@ public func WrapData(_ payload: [uint8]) -> [uint8] {
 
 /// UnwrapData returns the payload of an X.224 Data PDU (the caller has
 /// already read a whole TPKT frame, e.g. from FrameSplitter).
-public func UnwrapData(_ frame: [uint8]) throws -> [uint8] {
+public func UnwrapData(frame: [uint8]) throws -> [uint8] {
     var r = binary.Reader(frame)
     try parseTPKT(&r)
     do {
@@ -257,7 +257,7 @@ public struct FrameSplitter {
 
     public init() {}
 
-    public mutating func Feed(_ data: [uint8]) {
+    public mutating func Feed(data: [uint8]) {
         buffer.append(contentsOf: data)
     }
 
@@ -306,7 +306,7 @@ public struct FrameSplitter {
         return .fastPath(frame)
     }
 
-    mutating func take(_ n: int) -> [uint8] {
+    mutating func take(n: int) -> [uint8] {
         var out = [uint8](repeating: 0, count: n)
         var i = 0
         while i < n {
@@ -326,7 +326,7 @@ public struct FrameSplitter {
 
 // --- helpers ---
 
-func wrapTPKT(_ payload: [uint8]) -> [uint8] {
+func wrapTPKT(payload: [uint8]) -> [uint8] {
     let total = payload.count + 4
     var w = binary.Writer()
     w.U8(tpktVersion)
@@ -336,7 +336,7 @@ func wrapTPKT(_ payload: [uint8]) -> [uint8] {
     return w.Bytes
 }
 
-func parseTPKT(_ r: inout binary.Reader) throws {
+func parseTPKT(r: inout binary.Reader) throws {
     do {
         let version = try r.U8()
         if version != tpktVersion {

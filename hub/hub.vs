@@ -23,7 +23,7 @@ public struct Snapshot {
     public var Dir: fs.Path
 
     /// The local path of one of its files.
-    public func Path(_ file: string) -> fs.Path {
+    public func Path(file: string) -> fs.Path {
         return self.Dir / file
     }
 
@@ -81,7 +81,7 @@ public struct Hub {
     /// Resolve pins a reference to a commit and lists the files it asks
     /// for, transferring no file. Offline, or when the hub cannot be
     /// reached, the cache answers if it can.
-    public func Resolve(_ ref: Ref) async throws -> Snapshot {
+    public func Resolve(ref: Ref) async throws -> Snapshot {
         if self.Offline {
             return try self.cached(ref)
         }
@@ -122,7 +122,7 @@ public struct Hub {
     /// Download resolves a reference and makes sure its files are in the
     /// cache, fetching what is missing -- resuming what an earlier run
     /// left half done -- and checking each against its hash.
-    public func Download(_ ref: Ref) async throws -> Snapshot {
+    public func Download(ref: Ref) async throws -> Snapshot {
         let snap = try await self.Resolve(ref)
         if self.Offline {
             return snap
@@ -144,7 +144,7 @@ public struct Hub {
     }
 
     // cached is the snapshot the cache holds for a reference.
-    func cached(_ ref: Ref) throws -> Snapshot {
+    func cached(ref: Ref) throws -> Snapshot {
         guard let commit = self.Cache.Commit(ref.Kind, ref.Repo, ref.Revision) else {
             throw HubError.notCached(ref.description)
         }
@@ -164,7 +164,7 @@ public struct Hub {
 
     // revisionInfo asks the API for a repository at a revision, with
     // each file's size and hash.
-    func revisionInfo(_ ref: Ref) async throws -> json.Value {
+    func revisionInfo(ref: Ref) async throws -> json.Value {
         let url = "\(self.Endpoint)/api/\(ref.Kind.Plural)/\(escape(ref.Repo, keepSlash: true))/revision/\(escape(ref.Revision))?blobs=true"
         var s = try await self.open("GET", url, ref)
         defer { s.Close() }
@@ -189,7 +189,7 @@ public struct Hub {
 
     // open sends a request and follows redirects to a 2xx answer, whose
     // body is left to read. The token goes only to the endpoint's host.
-    func open(_ method: string, _ address: string, _ ref: Ref, rangeFrom: int64 = 0) async throws -> http.ResponseStream {
+    func open(method: string, address: string, ref: Ref, rangeFrom: int64 = 0) async throws -> http.ResponseStream {
         let client = http.Client(timeoutMs: 30000)
         let home = try url.Parse(self.Endpoint)
         var u = try url.Parse(address)
@@ -243,7 +243,7 @@ public struct Hub {
     // fetch downloads one file into its blob: into blob.incomplete,
     // resumed from where an earlier run stopped, hashed as it goes, and
     // renamed into place once its size and hash are right.
-    func fetch(_ ref: Ref, _ commit: string, _ f: RepoFile, _ totalDone: int64, _ total: int64) async throws {
+    func fetch(ref: Ref, commit: string, f: RepoFile, totalDone: int64, total: int64) async throws {
         let blob = self.Cache.BlobPath(ref.Kind, ref.Repo, f.Etag)
         let part = fs.Path(blob.String() + ".incomplete")
         if let parent = blob.Parent() {
@@ -347,12 +347,12 @@ func defaultToken() -> string? {
 }
 
 /// Resolve pins a reference ("hf.co/org/name@rev:TAG") with the default Hub.
-public func Resolve(_ ref: string) async throws -> Snapshot {
+public func Resolve(ref: string) async throws -> Snapshot {
     return try await Hub().Resolve(try Ref.Parse(ref))
 }
 
 /// Download fetches what a reference asks for into the cache with the
 /// default Hub, and returns the snapshot it is in.
-public func Download(_ ref: string) async throws -> Snapshot {
+public func Download(ref: string) async throws -> Snapshot {
     return try await Hub().Download(try Ref.Parse(ref))
 }

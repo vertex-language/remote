@@ -16,7 +16,7 @@ final class Pump {
     let session: rdp.Session
     var logon: bool = false
     var ended: string = ""
-    init(_ session: rdp.Session) { self.session = session }
+    init(session: rdp.Session) { self.session = session }
     func run() async {
         while true {
             do {
@@ -34,7 +34,7 @@ final class Pump {
     }
 }
 
-func pause(_ ms: int64) async {
+func pause(ms: int64) async {
     try? await time.Sleep(time.Duration.Milliseconds(ms))
 }
 

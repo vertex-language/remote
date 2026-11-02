@@ -17,7 +17,7 @@ func usage() -> int32 {
     return 2
 }
 
-func size(_ n: int64) -> string {
+func size(n: int64) -> string {
     if n < 0 {
         return "?"
     }

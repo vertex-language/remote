@@ -9,7 +9,7 @@ import "encoding/binary"
 // --- PER (Packed Encoding Rules, aligned) ---
 
 /// PERWriteLength writes a PER length determinant (1 or 2 bytes).
-public func PERWriteLength(_ w: inout binary.Writer, _ length: int) {
+public func PERWriteLength(w: inout binary.Writer, length: int) {
     if length > 0x7f {
         w.U16BE(uint16(truncatingIfNeeded: length) | 0x8000)
     } else {
@@ -18,7 +18,7 @@ public func PERWriteLength(_ w: inout binary.Writer, _ length: int) {
 }
 
 /// PERReadLength reads a PER length determinant.
-public func PERReadLength(_ r: inout binary.Reader) throws -> int {
+public func PERReadLength(r: inout binary.Reader) throws -> int {
     let a = try r.U8()
     if (a & 0x80) != 0 {
         let b = try r.U8()
@@ -28,27 +28,27 @@ public func PERReadLength(_ r: inout binary.Reader) throws -> int {
 }
 
 /// PERReadU16 reads an integer stored as a u16 offset from `min`.
-public func PERReadU16(_ r: inout binary.Reader, min: uint16) throws -> uint16 {
+public func PERReadU16(r: inout binary.Reader, min: uint16) throws -> uint16 {
     return (try r.U16BE()) &+ min
 }
 
 /// PERReadEnum reads a 1-byte ENUMERATED.
-public func PERReadEnum(_ r: inout binary.Reader) throws -> uint8 {
+public func PERReadEnum(r: inout binary.Reader) throws -> uint8 {
     return try r.U8()
 }
 
-public func PERWriteChoice(_ w: inout binary.Writer, _ choice: uint8) { w.U8(choice) }
-public func PERWriteSelection(_ w: inout binary.Writer, _ sel: uint8) { w.U8(sel) }
-public func PERWriteNumberOfSets(_ w: inout binary.Writer, _ n: uint8) { w.U8(n) }
-public func PERWriteEnum(_ w: inout binary.Writer, _ e: uint8) { w.U8(e) }
+public func PERWriteChoice(w: inout binary.Writer, choice: uint8) { w.U8(choice) }
+public func PERWriteSelection(w: inout binary.Writer, sel: uint8) { w.U8(sel) }
+public func PERWriteNumberOfSets(w: inout binary.Writer, n: uint8) { w.U8(n) }
+public func PERWriteEnum(w: inout binary.Writer, e: uint8) { w.U8(e) }
 
 /// PERWriteU16 writes an integer offset from `min` (INTEGER (min..65535)).
-public func PERWriteU16(_ w: inout binary.Writer, _ value: uint16, min: uint16) {
+public func PERWriteU16(w: inout binary.Writer, value: uint16, min: uint16) {
     w.U16BE(value &- min)
 }
 
 /// PERWriteObjectID writes the GCC object identifier {0 0 20 124 0 1}.
-public func PERWriteObjectID(_ w: inout binary.Writer, _ oid: [uint8]) {
+public func PERWriteObjectID(w: inout binary.Writer, oid: [uint8]) {
     PERWriteLength(&w, oid.count - 1)
     w.U8(oid[0] * 40 + oid[1])
     var i = 2
@@ -56,13 +56,13 @@ public func PERWriteObjectID(_ w: inout binary.Writer, _ oid: [uint8]) {
 }
 
 /// PERWriteOctetString writes an octet string with a length offset by min.
-public func PERWriteOctetString(_ w: inout binary.Writer, _ s: [uint8], min: int) {
+public func PERWriteOctetString(w: inout binary.Writer, s: [uint8], min: int) {
     PERWriteLength(&w, s.count - min)
     w.Append(s)
 }
 
 /// PERWriteNumericString packs a numeric string (2 digits per byte).
-public func PERWriteNumericString(_ w: inout binary.Writer, _ s: [uint8], min: int) {
+public func PERWriteNumericString(w: inout binary.Writer, s: [uint8], min: int) {
     PERWriteLength(&w, s.count - min)
     var i = 0
     while i < s.count {
@@ -88,7 +88,7 @@ let berTagEnumerated: uint8 = 10
 let berTagSequence: uint8 = 16
 
 /// BERWriteLength writes a BER definite length.
-public func BERWriteLength(_ w: inout binary.Writer, _ length: int) {
+public func BERWriteLength(w: inout binary.Writer, length: int) {
     if length > 0xff {
         w.U8(0x82)
         w.U16BE(uint16(truncatingIfNeeded: length))
@@ -100,7 +100,7 @@ public func BERWriteLength(_ w: inout binary.Writer, _ length: int) {
     }
 }
 
-public func BERReadLength(_ r: inout binary.Reader) throws -> int {
+public func BERReadLength(r: inout binary.Reader) throws -> int {
     let first = try r.U8()
     if (first & 0x80) == 0 { return int(first) }
     let n = int(first & 0x7f)
@@ -111,7 +111,7 @@ public func BERReadLength(_ r: inout binary.Reader) throws -> int {
 }
 
 /// BERWriteApplicationTag writes an application-class constructed tag.
-public func BERWriteApplicationTag(_ w: inout binary.Writer, _ tag: uint8, _ length: int) {
+public func BERWriteApplicationTag(w: inout binary.Writer, tag: uint8, length: int) {
     if tag > 0x1e {
         w.U8(berClassApplication | berPcConstruct | berTagMask)
         w.U8(tag)
@@ -121,7 +121,7 @@ public func BERWriteApplicationTag(_ w: inout binary.Writer, _ tag: uint8, _ len
     BERWriteLength(&w, length)
 }
 
-public func BERReadApplicationTag(_ r: inout binary.Reader, _ tag: uint8) throws -> int {
+public func BERReadApplicationTag(r: inout binary.Reader, tag: uint8) throws -> int {
     let id = try r.U8()
     if tag > 0x1e {
         if id != (berClassApplication | berPcConstruct | berTagMask) {
@@ -136,11 +136,11 @@ public func BERReadApplicationTag(_ r: inout binary.Reader, _ tag: uint8) throws
     return try BERReadLength(&r)
 }
 
-func berUniversalTag(_ w: inout binary.Writer, _ tag: uint8, _ pc: uint8) {
+func berUniversalTag(w: inout binary.Writer, tag: uint8, pc: uint8) {
     w.U8(berClassUniversal | pc | (berTagMask & tag))
 }
 
-public func BERWriteInteger(_ w: inout binary.Writer, _ value: uint32) {
+public func BERWriteInteger(w: inout binary.Writer, value: uint32) {
     berUniversalTag(&w, berTagInteger, berPcPrimitive)
     if value < 0x80 {
         BERWriteLength(&w, 1); w.U8(uint8(truncatingIfNeeded: value))
@@ -155,7 +155,7 @@ public func BERWriteInteger(_ w: inout binary.Writer, _ value: uint32) {
     }
 }
 
-public func BERReadInteger(_ r: inout binary.Reader) throws -> uint32 {
+public func BERReadInteger(r: inout binary.Reader) throws -> uint32 {
     let id = try r.U8()
     if id != (berClassUniversal | berPcPrimitive | berTagInteger) {
         throw wireError("expected BER INTEGER")
@@ -167,19 +167,19 @@ public func BERReadInteger(_ r: inout binary.Reader) throws -> uint32 {
     return v
 }
 
-public func BERWriteBool(_ w: inout binary.Writer, _ value: bool) {
+public func BERWriteBool(w: inout binary.Writer, value: bool) {
     berUniversalTag(&w, berTagBoolean, berPcPrimitive)
     BERWriteLength(&w, 1)
     w.U8(value ? 0xff : 0x00)
 }
 
-public func BERWriteEnumerated(_ w: inout binary.Writer, _ value: uint8) {
+public func BERWriteEnumerated(w: inout binary.Writer, value: uint8) {
     berUniversalTag(&w, berTagEnumerated, berPcPrimitive)
     BERWriteLength(&w, 1)
     w.U8(value)
 }
 
-public func BERReadEnumerated(_ r: inout binary.Reader) throws -> uint8 {
+public func BERReadEnumerated(r: inout binary.Reader) throws -> uint8 {
     let id = try r.U8()
     if id != (berClassUniversal | berPcPrimitive | berTagEnumerated) {
         throw wireError("expected BER ENUMERATED")
@@ -188,17 +188,17 @@ public func BERReadEnumerated(_ r: inout binary.Reader) throws -> uint8 {
     return try r.U8()
 }
 
-public func BERWriteOctetStringTag(_ w: inout binary.Writer, _ length: int) {
+public func BERWriteOctetStringTag(w: inout binary.Writer, length: int) {
     berUniversalTag(&w, berTagOctetString, berPcPrimitive)
     BERWriteLength(&w, length)
 }
 
-public func BERWriteOctetString(_ w: inout binary.Writer, _ s: [uint8]) {
+public func BERWriteOctetString(w: inout binary.Writer, s: [uint8]) {
     BERWriteOctetStringTag(&w, s.count)
     w.Append(s)
 }
 
-public func BERReadOctetString(_ r: inout binary.Reader) throws -> [uint8] {
+public func BERReadOctetString(r: inout binary.Reader) throws -> [uint8] {
     let id = try r.U8()
     if id != (berClassUniversal | berPcPrimitive | berTagOctetString) {
         throw wireError("expected BER OCTET STRING")
@@ -216,4 +216,4 @@ public enum WireError: Error {
     }
 }
 
-func wireError(_ s: string) -> WireError { return WireError.decode(s) }
+func wireError(s: string) -> WireError { return WireError.decode(s) }

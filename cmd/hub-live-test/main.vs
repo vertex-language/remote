@@ -12,7 +12,7 @@ import (
 
 var failures = 0
 
-func check(_ ok: bool, _ msg: string) {
+func check(ok: bool, msg: string) {
     if ok {
         print("ok    \(msg)")
     } else {
@@ -25,7 +25,7 @@ let file = "tinyllamas/stories260K.gguf"
 let sha = "270cba1bd5109f42d03350f60406024560464db173c0e387d91f0426d3bd256d"
 let size: int64 = 1185376
 
-func exists(_ p: fs.Path) -> bool {
+func exists(p: fs.Path) -> bool {
     do {
         _ = try fs.Metadata(p, followSymlinks: false)
         return true
@@ -34,7 +34,7 @@ func exists(_ p: fs.Path) -> bool {
     }
 }
 
-func contentHash(_ p: fs.Path) -> string {
+func contentHash(p: fs.Path) -> string {
     do {
         return sha256.ToHex(sha256.Sum256(try fs.ReadFile(p)))
     } catch {

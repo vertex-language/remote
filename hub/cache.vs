@@ -31,24 +31,24 @@ public struct Cache {
     }
 
     /// The directory of a repository: models--org--name.
-    public func RepoDir(_ kind: RepoKind, _ repo: string) -> fs.Path {
+    public func RepoDir(kind: RepoKind, repo: string) -> fs.Path {
         let flat = repo.split(separator: "/").map { String($0) }.joined(separator: "--")
         return self.Root / "\(kind.Plural)--\(flat)"
     }
 
     /// Where a blob is kept.
-    public func BlobPath(_ kind: RepoKind, _ repo: string, _ etag: string) -> fs.Path {
+    public func BlobPath(kind: RepoKind, repo: string, etag: string) -> fs.Path {
         return self.RepoDir(kind, repo) / "blobs" / etag
     }
 
     /// The directory of a snapshot: the repository at a commit.
-    public func SnapshotDir(_ kind: RepoKind, _ repo: string, _ commit: string) -> fs.Path {
+    public func SnapshotDir(kind: RepoKind, repo: string, commit: string) -> fs.Path {
         return self.RepoDir(kind, repo) / "snapshots" / commit
     }
 
     /// The commit a revision was at when it was last resolved; a commit
     /// is itself.
-    public func Commit(_ kind: RepoKind, _ repo: string, _ revision: string) -> string? {
+    public func Commit(kind: RepoKind, repo: string, revision: string) -> string? {
         if isCommit(revision) {
             return revision
         }
@@ -63,7 +63,7 @@ public struct Cache {
     }
 
     /// Records the commit a branch or tag is at.
-    public func SetCommit(_ kind: RepoKind, _ repo: string, _ revision: string, _ commit: string) throws {
+    public func SetCommit(kind: RepoKind, repo: string, revision: string, commit: string) throws {
         if revision == commit {
             return
         }
@@ -75,7 +75,7 @@ public struct Cache {
     }
 
     /// Whether a blob is there, whole: its size is the one expected.
-    public func HasBlob(_ kind: RepoKind, _ repo: string, _ file: RepoFile) -> bool {
+    public func HasBlob(kind: RepoKind, repo: string, file: RepoFile) -> bool {
         do {
             let m = try fs.Metadata(self.BlobPath(kind, repo, file.Etag))
             return m.IsFile() && m.Size == file.Size
@@ -86,7 +86,7 @@ public struct Cache {
 
     /// Links a snapshot's path to its blob, as huggingface_hub does: a
     /// symlink relative to where it is, so the cache can move.
-    public func Link(_ kind: RepoKind, _ repo: string, _ commit: string, _ file: RepoFile) throws {
+    public func Link(kind: RepoKind, repo: string, commit: string, file: RepoFile) throws {
         let link = self.SnapshotDir(kind, repo, commit) / file.Path
         if let parent = link.Parent() {
             try fs.CreateDir(parent, all: true)
@@ -109,7 +109,7 @@ public struct Cache {
 
     /// The files of a snapshot already in the cache, found by walking
     /// its directory: sizes are the blobs', etags the link targets'.
-    public func Files(_ kind: RepoKind, _ repo: string, _ commit: string) throws -> [RepoFile] {
+    public func Files(kind: RepoKind, repo: string, commit: string) throws -> [RepoFile] {
         let dir = self.SnapshotDir(kind, repo, commit)
         var out: [RepoFile] = []
         try fs.Walk(dir) { entry in
@@ -148,14 +148,14 @@ func hfHome() -> string {
     return (user.Home() ?? ".") + "/.cache/huggingface"
 }
 
-func expandHome(_ p: string) -> string {
+func expandHome(p: string) -> string {
     if p == "~" || p.hasPrefix("~/") {
         return (user.Home() ?? ".") + String(p.dropFirst(1))
     }
     return p
 }
 
-func trimmed(_ s: string) -> string {
+func trimmed(s: string) -> string {
     var b = [uint8](s.utf8)
     while let last = b.last, last == 0x0A || last == 0x0D || last == 0x20 || last == 0x09 {
         b.removeLast()

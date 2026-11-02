@@ -40,7 +40,7 @@ let infoLogonErrors: uint32 = 0x01000000
 
 /// buildClientInfo builds the Client Info PDU body (security header + info
 /// packet). Under NLA the password is empty (already delegated by CredSSP).
-func buildClientInfo(_ config: Config) -> [uint8] {
+func buildClientInfo(config: Config) -> [uint8] {
     var info = binary.Writer()
     info.U32LE(0)   // CodePage
     let flags = infoMouse | infoDisableCtrlAltDel | infoUnicode | infoMaximizeShell |
@@ -81,7 +81,7 @@ func buildClientInfo(_ config: Config) -> [uint8] {
 
 /// parseLicensing reads a licensing PDU and returns true when the server
 /// grants the client (STATUS_VALID_CLIENT) so the sequence can continue.
-func parseLicensing(_ payload: [uint8]) throws -> bool {
+func parseLicensing(payload: [uint8]) throws -> bool {
     // The payload begins with a Basic Security Header (flags incl.
     // SEC_LICENSE_PKT). Then a licensing preamble.
     var r = binary.Reader(payload)
@@ -114,7 +114,7 @@ public struct DemandActive {
 
 /// parseDemandActive reads a Demand Active PDU (with or without a 4-byte
 /// security header in front of the share control header).
-func parseDemandActive(_ payload: [uint8]) throws -> DemandActive {
+func parseDemandActive(payload: [uint8]) throws -> DemandActive {
     var da = DemandActive()
     var r = binary.Reader(payload)
     let _ = try r.U16LE()          // totalLength
@@ -157,7 +157,7 @@ func parseDemandActive(_ payload: [uint8]) throws -> DemandActive {
 }
 
 /// shareControlHeader wraps a body with a Share Control Header.
-func shareControlHeader(_ pduType: uint16, source: uint16, body: [uint8]) -> [uint8] {
+func shareControlHeader(pduType: uint16, source: uint16, body: [uint8]) -> [uint8] {
     var w = binary.Writer()
     w.U16LE(uint16(truncatingIfNeeded: body.count + 6))
     w.U16LE(protocolVersion | pduType)
@@ -167,7 +167,7 @@ func shareControlHeader(_ pduType: uint16, source: uint16, body: [uint8]) -> [ui
 }
 
 /// shareDataHeader wraps a body with Share Control + Share Data headers.
-func shareDataHeader(_ pduType2: uint8, shareId: uint32, source: uint16, body: [uint8]) -> [uint8] {
+func shareDataHeader(pduType2: uint8, shareId: uint32, source: uint16, body: [uint8]) -> [uint8] {
     var d = binary.Writer()
     d.U32LE(shareId)
     d.U8(0)                        // pad1

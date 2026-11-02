@@ -7,7 +7,7 @@ import (
 )
 
 var failures = 0
-func check(_ ok: bool, _ msg: string) {
+func check(ok: bool, msg: string) {
     if ok { print("ok    \(msg)") } else { print("FAIL  \(msg)"); failures += 1 }
 }
 

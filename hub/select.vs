@@ -37,7 +37,7 @@ public let DefaultTag = "Q4_K_M"
 /// A GGUF-only repository with neither a tag nor patterns gives the
 /// DefaultTag quant when it has one, else its first GGUF file: such a
 /// repository is a shelf of quants, and one is wanted, not all.
-public func Select(_ files: [RepoFile], ref: Ref, include: [string] = []) throws -> [RepoFile] {
+public func Select(files: [RepoFile], ref: Ref, include: [string] = []) throws -> [RepoFile] {
     if !ref.File.isEmpty {
         var out: [RepoFile] = []
         for f in files {
@@ -97,7 +97,7 @@ public func Select(_ files: [RepoFile], ref: Ref, include: [string] = []) throws
 // ggufQuant is the GGUF files whose name carries the quant as a word of
 // its own -- "Qwen3-8B-Q4_K_M.gguf", "Q4_K_M/x-00001-of-00002.gguf" --
 // compared without case. "Q4_K" does not take "Q4_K_M".
-func ggufQuant(_ files: [RepoFile], _ tag: string) -> [RepoFile] {
+func ggufQuant(files: [RepoFile], tag: string) -> [RepoFile] {
     let want = [uint8](tag.lowercased().utf8)
     var out: [RepoFile] = []
     for f in files {
@@ -139,13 +139,13 @@ func ggufQuant(_ files: [RepoFile], _ tag: string) -> [RepoFile] {
     return out
 }
 
-func isSeparator(_ c: uint8) -> bool {
+func isSeparator(c: uint8) -> bool {
     return c == 0x2D || c == 0x2E || c == 0x5F || c == 0x2F // - . _ /
 }
 
 // splitStem is the name of a split GGUF with its "-00001-of-00003" taken
 // off, or nil for a file that is not one of a split.
-func splitStem(_ path: string) -> string? {
+func splitStem(path: string) -> string? {
     let b = [uint8](path.utf8)
     // ...-NNNNN-of-NNNNN.gguf
     let tail = 5 + 4 + 5 + 5 // "-00001" "-of-" "00003" ".gguf"
@@ -165,7 +165,7 @@ func splitStem(_ path: string) -> string? {
 /// alone, so "*.json" finds JSON files in any directory; one starting
 /// with '/' is anchored at the repository's root, as in .gitignore, so
 /// "/*.json" finds only those at the top.
-public func Match(_ pattern: string, _ path: string) -> bool {
+public func Match(pattern: string, path: string) -> bool {
     var p = [uint8](pattern.utf8)
     var s = [uint8](path.utf8)
     if p.first == 0x2F {
@@ -180,7 +180,7 @@ public func Match(_ pattern: string, _ path: string) -> bool {
     return globMatch(p, 0, s, 0)
 }
 
-func globMatch(_ p: [uint8], _ pi: int, _ s: [uint8], _ si: int) -> bool {
+func globMatch(p: [uint8], pi: int, s: [uint8], si: int) -> bool {
     var i = pi
     var j = si
     while i < p.count {
